@@ -1,4 +1,4 @@
-# Zammad Service-Portal
+# Zammad-Ticket-Portal
 
 A modular, internationalized frontend for Zammad-based ticket/helpdesk systems.
 You can integrate it as a modal-pop-up in your existing Intranet, for example.
