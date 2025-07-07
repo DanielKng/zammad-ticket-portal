@@ -19,7 +19,6 @@ You can integrate it as a modal pop-up in your existing intranet, for example.
   I haven’t had the chance to test it in other frontends.  
   Be sure to create an issue if problems arise.
 </details>
----
 
 ## ⚠️ Important: Configuration Required
 
