@@ -1,10 +1,12 @@
 # Zammad-Ticket-Portal
 
 A modular, internationalized frontend for Zammad-based ticket/helpdesk systems.
+
 You can integrate it as a modal-pop-up in your existing Intranet, for example.
 
 For Contao you'd put the contents from nf_gui.html in a new article and edit the paths accordingly.
 Be sure to remove `<meta charset="utf-8">` from the top of the HTML as Contao can't handle it.
+
 There you go, the Button should appear where you'd put it and on-click, the website behind the modal should be blurred and the modal should pop-up!
 
 ---
@@ -14,7 +16,10 @@ There you go, the Button should appear where you'd put it and on-click, the webs
 
 **Before using this project, open `src/js/nf-config.js` and read it carefully from top to bottom.**
 
-All user-facing strings, API endpoints, email filters, and system settings are configured there. You must review and adjust this file for your environment and localization needs.
+All user-facing strings, API endpoints, email filters, and system settings are configured there. 
+
+You must review and adjust this file for your environment and localization needs.
+
 Be sure to enable **BASIC-AUTH** in *Zammad* as well!
 
 ---
@@ -78,7 +83,7 @@ zammad-modal/
 
 ## Usage
 - All UI and logic is modular and can be extended.
-- To add a new language, duplicate and translate the `labels` and `fallbacks` in `nf-config.js`.
+- To add a new language, duplicate and translate the `labels` in `nf-config.js`.
 - For custom backend integration, adapt the API calls in `src/js/nf-api.js`.
 
 ## Contributing
