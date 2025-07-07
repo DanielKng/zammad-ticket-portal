@@ -1,4 +1,4 @@
-# Unofficial Zammad Modal Frontend
+# Unofficial Zammad Ticket Portal
 
 A modular, internationalized **unofficial** frontend for Zammad-based ticket/helpdesk systems.  
 You can integrate it as a modal pop-up in your existing intranet or CMS.
