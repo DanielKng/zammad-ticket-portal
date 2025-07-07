@@ -143,4 +143,4 @@ Pull requests and issues are welcome! Please follow the code style and add tests
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+See [LICENSE](LICENSE.md) for details.
