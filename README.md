@@ -1,14 +1,24 @@
-# Zammad-Ticket-Portal
+## A modular, internationalized frontend for Zammad-based ticket/helpdesk systems
 
-A modular, internationalized frontend for Zammad-based ticket/helpdesk systems.
+You can integrate it as a modal pop-up in your existing intranet, for example.
 
-You can integrate it as a modal-pop-up in your existing Intranet, for example.
+<details>
+  <summary>Integration with Contao</summary>
 
-For Contao you'd put the contents from nf_gui.html in a new article and edit the paths accordingly.
-Be sure to remove `<meta charset="utf-8">` from the top of the HTML as Contao can't handle it.
+  For Contao, upload all files to the filesystem.  
+  Place the contents of `nf_gui.html` in a new article and adjust the paths accordingly.  
+  Be sure to remove `<meta charset="utf-8">` from the top of the HTML, as Contao can’t handle it.  
 
-There you go, the Button should appear where you'd put it and on-click, the website behind the modal should be blurred and the modal should pop-up!
+  That’s it! The button will appear wherever you place it, and on click, the background will blur and the modal will pop up.
+</details>
 
+<details>
+  <summary>Other CMS systems</summary>
+
+  You probably know what you're doing.  
+  I haven’t had the chance to test it in other frontends.  
+  Be sure to create an issue if problems arise.
+</details>
 ---
 
 ## ⚠️ Important: Configuration Required
