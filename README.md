@@ -43,6 +43,7 @@ Also ensure **BASIC-AUTH** is enabled in *Zammad*.
 ## Features
 
 - User login via Zammad API (Basic-AUTH)
+- Language support (currently German and English, but it's easy to add others!)
 - View all tickets (open/closed) – useful for self-help
 - Create new tickets (with attachments)
 - Reply to existing tickets in a messenger-like thread view
