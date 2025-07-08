@@ -25,7 +25,7 @@ function nfSetupReplyInterface() {
         replyToggle = document.createElement('button');
         replyToggle.id = 'nf_ticketdetail_replytoggle';               // Unique ID for later reference
         replyToggle.className = 'nf-ticketdetail-replytoggle';        // CSS class for styling
-        replyToggle.textContent = NF_CONFIG.system.labels.ticketDetailActions.reply;
+        replyToggle.textContent = NF_CONFIG.getLabels(NF_CONFIG.currentLanguage).ticketDetailActions.reply;
         // Insert button before the reply box in the container
         nf.ticketDetailContainer.insertBefore(replyToggle, nf.ticketDetailReplyBox);
     }

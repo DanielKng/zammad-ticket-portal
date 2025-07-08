@@ -105,8 +105,8 @@ const STATUS_ELEMENT_STYLES = `
  * @returns {string} The English status label
  */
 function nfStateLabel(stateId) {
-    const states = window.NF_CONFIG?.ui?.ticketStates;
-    return states[stateId] || window.NF_CONFIG?.system?.labels?.unknownStatus || 'Unknown';
+    const states = window.NF_CONFIG.getTicketStates(window.NF_CONFIG.currentLanguage);
+    return states[stateId] || window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage)?.unknownStatus || 'Unknown';
 }
 /**
  * Converts a file to a Base64 string for API uploads

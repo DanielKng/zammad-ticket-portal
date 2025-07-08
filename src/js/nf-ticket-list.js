@@ -71,10 +71,10 @@ function nfInitializeFilters() {
     const yearFilter = document.getElementById('nf_filter_year');
     const reloadBtn = document.getElementById('nf_ticketlist_reload');
     // Set reload button label from config
-    if (reloadBtn && window.NF_CONFIG?.ui?.labels?.reloadButton) {
-        reloadBtn.textContent = window.NF_CONFIG.ui.labels.reloadButton;
-        reloadBtn.setAttribute('aria-label', window.NF_CONFIG.ui.labels.reloadButton);
-        reloadBtn.setAttribute('title', window.NF_CONFIG.ui.labels.reloadButton);
+    if (reloadBtn && window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage)?.reloadButton) {
+        reloadBtn.textContent = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage).reloadButton;
+        reloadBtn.setAttribute('aria-label', window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage).reloadButton);
+        reloadBtn.setAttribute('title', window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage).reloadButton);
     }
     if (!statusFilter || !sortFilter || !yearFilter) return;
     // ===============================
@@ -213,7 +213,7 @@ function nfRenderTicketList(tickets) {
     // ===============================
     if (!tickets.length) {
         nfShow(nf.ticketListEmpty);  // Show "No tickets" message
-        nf.ticketListEmpty.textContent = NF_CONFIG.system.labels.ticketListEmpty;
+        nf.ticketListEmpty.textContent = NF_CONFIG.getLabels(NF_CONFIG.currentLanguage).ticketListEmpty;
         return;
     } else {
         nfHide(nf.ticketListEmpty);  // Hide "No tickets" message
@@ -256,12 +256,11 @@ function nfRenderTicketList(tickets) {
                     nfLogger.warn(NF_CONFIG.utilsMessages.ticketListStatusSpanMissing, { ticket: t });
                 }
             }
-            // Ticket title as clickable heading with ARIA
+            // Ticket title as plain text (no link)
             const subjectCell = tr.querySelector('.nf-ticketlist-cell--subject');
             if (subjectCell) {
-                const ariaLabelTemplate = NF_CONFIG.system.assets.aria.openTicket || 'Open ticket: {title}';
                 const ticketTitle = t.title || t.subject || '';
-                subjectCell.innerHTML = `<a href="#" class="nf-ticketlist-link" role="heading" aria-level="3" aria-label="${ariaLabelTemplate.replace('{title}', ticketTitle)}" tabindex="0">${ticketTitle}</a>`;
+                subjectCell.textContent = ticketTitle;
             }
         } else {
             // ===============================
@@ -272,7 +271,7 @@ function nfRenderTicketList(tickets) {
             tr.className = 'nf-ticketlist-row';
             tr.innerHTML = `
                 <td class="nf-ticketlist-cell nf-ticketlist-cell--id nf-center-text">${t.number || t.id || ''}</td>
-                <td class="nf-ticketlist-cell nf-ticketlist-cell--subject"><a href="#" class="nf-ticketlist-link" role="heading" aria-level="3" aria-label="${(NF_CONFIG.system.assets.aria.openTicket || 'Open ticket: {title}').replace('{title}', t.title || t.subject || '')}" tabindex="0">${t.title || t.subject || ''}</a></td>
+                <td class="nf-ticketlist-cell nf-ticketlist-cell--subject">${t.title || t.subject || ''}</td>
                 <td class="nf-ticketlist-cell nf-ticketlist-cell--created nf-center-text">${t.created_at ? new Date(t.created_at).toLocaleString('en-US') : ''}</td>
                 <td class="nf-ticketlist-cell nf-ticketlist-cell--status nf-center-text"><span class="nf-ticketlist-status nf-ticketlist-status--${t.state || t.state_id}">${nfStateLabel(t.state || t.state_id)}</span></td>
             `;

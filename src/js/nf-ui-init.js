@@ -48,8 +48,8 @@ const NF_UI_INIT = {
      * Initializes the main modal with configurable texts.
      */
     initMainModal: function() {
-        const labels = window.NF_CONFIG.system.labels;
-        const aria = window.NF_CONFIG.system.assets.aria;
+        const labels = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage);
+        const aria = window.NF_CONFIG.getAriaLabels(window.NF_CONFIG.currentLanguage);
         
         // Modal title and subtitle
         const modalTitle = document.querySelector('.nf-modal-title');
@@ -93,7 +93,7 @@ const NF_UI_INIT = {
      * Initializes the knowledge portal card.
      */
     initKnowledgePortalCard: function() {
-        const labels = window.NF_CONFIG.system.labels;
+        const labels = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage);
         const knowledgeCard = document.querySelector('.nf-card--knowledge');
         
         if (knowledgeCard && labels) {
@@ -119,7 +119,7 @@ const NF_UI_INIT = {
      * Initializes the ticket system card.
      */
     initTicketSystemCard: function() {
-        const labels = window.NF_CONFIG.system.labels;
+        const labels = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage);
         const ticketCard = document.querySelector('.nf-card--tickets');
         
         if (ticketCard && labels) {
@@ -150,7 +150,7 @@ const NF_UI_INIT = {
      * Initializes the ticket list with configurable texts.
      */
     initTicketList: function() {
-        const labels = window.NF_CONFIG.system.labels;
+        const labels = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage);
         
         // Filter options
         const statusFilter = document.getElementById('nf_filter_status');
@@ -205,7 +205,7 @@ const NF_UI_INIT = {
      * Initializes the ticket detail view.
      */
     initTicketDetail: function() {
-        const labels = window.NF_CONFIG.system.labels;
+        const labels = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage);
         
         if (!labels.ticketDetailActions) return;
 
@@ -240,7 +240,7 @@ const NF_UI_INIT = {
      * Initializes the gallery.
      */
     initGallery: function() {
-        const aria = window.NF_CONFIG.system.assets.aria;
+        const aria = window.NF_CONFIG.getAriaLabels(window.NF_CONFIG.currentLanguage);
         const galleryOverlay = document.getElementById('nf_gallery_overlay');
         const galleryClose = document.getElementById('nf_gallery_close');
         const galleryPrev = document.getElementById('nf_gallery_prev');
@@ -255,7 +255,7 @@ const NF_UI_INIT = {
      * Initializes the login form.
      */
     initLogin: function() {
-        const labels = window.NF_CONFIG.system.labels;
+        const labels = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage);
         
         if (!labels.loginTitle || !labels.loginLabels) return;
 
@@ -295,7 +295,7 @@ const NF_UI_INIT = {
      * Initializes the new ticket form.
      */
     initNewTicket: function() {
-        const labels = window.NF_CONFIG.system.labels;
+        const labels = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage);
         
         if (!labels.newTicketTitle || !labels.newTicketLabels) return;
 

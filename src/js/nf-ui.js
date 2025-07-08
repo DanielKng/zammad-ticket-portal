@@ -177,7 +177,9 @@ function showLockoutMessage() {
 function showNormalLoginDisplay() {
     nfHide(nf.loginLockout);
     nf.loginSubmit.disabled = false;
-    const credentialsHint = window.NF_CONFIG?.ui?.login?.credentialsHint;
+    const credentialsHint = (window.NF_CONFIG?.currentLanguage === 'de')
+        ? window.NF_CONFIG?.ui?.login_de?.credentialsHint
+        : window.NF_CONFIG?.ui?.login?.credentialsHint;
     if (credentialsHint && nf.loginHint) {
         nf.loginHint.textContent = credentialsHint;
         nfShow(nf.loginHint);
