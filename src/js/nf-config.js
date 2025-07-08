@@ -112,15 +112,7 @@ const NF_CONFIG = {
             'Mit freundlichen Grüßen',
             'Freundliche Grüße',
             'Abteilung',
-            'Telefon:',
-            'From:', 
-            'Sent:',
-            'To:',
-            'Subject:',
-            'Best regards',
-            'Kind regards',
-            'Department',
-            'Phone:'
+            'Telefon:'
         ],
         // UI labels (for multilingual support or easy adjustment)
         labels: {

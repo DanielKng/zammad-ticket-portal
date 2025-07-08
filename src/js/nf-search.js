@@ -116,17 +116,17 @@ function nfShowSearchDropdown(resultsRaw, query) {
     // ITERATE AND DISPLAY RESULTS
     // ===============================
     details.forEach(res => {
-        let div;  // Container für ein Suchergebnis
+        let div;  // Container for search result
         let title = res.title || '';
         let summary = '';
         // ===============================
         // TEMPLATE-BASED CREATION
         // ===============================
         if (searchResultTemplate) {
-            // Template klonen
+            // Template cloning
             div = searchResultTemplate.firstElementChild.cloneNode(true);  // Deep Clone
             // ===============================
-            // TITLE MIT HIGHLIGHTING
+            // TITLE WITH HIGHLIGHTING
             // ===============================
             if (highlights[res.id] && highlights[res.id]["content.title"]) {
                 title = highlights[res.id]["content.title"].join(' ');
@@ -138,7 +138,7 @@ function nfShowSearchDropdown(resultsRaw, query) {
                 title = title.replace(re, '<mark>$1</mark>');
             }
             // ===============================
-            // SUMMARY MIT HIGHLIGHTING
+            // SUMMARY WITH HIGHLIGHTING
             // ===============================
             if (highlights[res.id] && highlights[res.id]["content.body"]) {
                 summary = highlights[res.id]["content.body"].join(' ... ');
@@ -152,7 +152,7 @@ function nfShowSearchDropdown(resultsRaw, query) {
                 summary = summary.replace(/<em>(.*?)<\/em>/g, '<mark>$1</mark>');
             }
             // ===============================
-            // Link-Element entfernen, stattdessen nur Text/Div
+            // Remove link element, use Text/Div instead
             // ===============================
             const titleElem = div.querySelector('.nf-search-result-title');
             if (titleElem) {
@@ -163,7 +163,7 @@ function nfShowSearchDropdown(resultsRaw, query) {
             }
             div.querySelector('.nf-search-result-summary').innerHTML = summary;
             // ===============================
-            // Klick-Handler auf das gesamte Ergebnis
+            // Click-Handler on the result
             // ===============================
             const helpdeskBase = window.NF_CONFIG?.links?.helpdeskBase;
             div.style.cursor = 'pointer';
@@ -171,7 +171,7 @@ function nfShowSearchDropdown(resultsRaw, query) {
                 window.open(helpdeskBase + res.url, '_blank');
                 nf.searchDropdown.style.display = 'none';
             });
-            // Optional: Hover-Effekt
+            // Optional: Hover-effect
             div.addEventListener('mouseenter', () => div.classList.add('nf-search-result--hover'));
             div.addEventListener('mouseleave', () => div.classList.remove('nf-search-result--hover'));
         } else {
