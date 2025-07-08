@@ -86,7 +86,7 @@
   max-width: 100%;
   box-sizing: border-box;
   padding-left: 0;
-  /* Bessere Scrollbalken-Darstellung mit Abstand */
+  /* Better scrollbar display with spacing */
   margin-right: -0.5rem;
   padding-right: 1rem;
 }
@@ -132,7 +132,7 @@
   line-height: 1.5;
 }
 
-/* --- Ticket-Detail Headercard volle Breite & Alignment --- */
+/* --- Ticket detail header card full width & alignment --- */
 .nf-ticketdetail-headercard {
   width: 100% !important;
   max-width: 100% !important;
@@ -225,7 +225,7 @@
   flex-direction: column;
   align-items: center;
   overflow-y: auto;
-  /* Bessere Scrollbalken-Integration */
+  /* Better scrollbar integration */
   padding-right: 2rem;
 }
 
@@ -238,7 +238,7 @@
   box-shadow: 0 1px 4px rgba(30,34,90,0.08);
 }
 
-/* Neue Styles für das mehrzeilige Layout im Ticket-Detailheader */
+/* New styles for the multi-line layout in the ticket detail header */
 .nf-ticketdetail-meta-row {
   display: flex;
   justify-content: space-between;
@@ -278,7 +278,7 @@
   font-style: italic;
 }
 
-/* Neue Zeile für "Aktualisiert am - Bearbeiter" */
+/* New line for "Updated on - Processor" */
 .nf-ticketdetail-updated-row {
   display: flex;
   justify-content: space-between;
@@ -448,7 +448,7 @@
   filter: brightness(0.9);
 }
 
-/* Responsive Anpassungen */
+/* Responsive adjustments */
 @media (max-width: 900px) {
   .nf-ticketdetail-modal {
     max-width: 99vw;

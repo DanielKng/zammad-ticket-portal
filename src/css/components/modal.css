@@ -105,7 +105,7 @@
   color: var(--danger);
 }
 
-/* Sicherstellen, dass Modal-Container relative Position haben */
+/* Ensure modal containers have relative position */
 .nf-login-container,
 .nf-newticket-container,
 .nf-ticketdetail-container,
@@ -114,7 +114,7 @@
   position: relative;
 }
 
-/* Responsive Anpassungen */
+/* Responsive adjustments */
 @media (max-width: 1200px) {
   .nf-modal-centerbox {
     max-width: 98vw;

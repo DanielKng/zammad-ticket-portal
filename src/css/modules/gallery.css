@@ -113,7 +113,7 @@
   white-space: nowrap;
 }
 
-/* Responsive Anpassungen für Galerie */
+/* Responsive adjustments for gallery */
 @media (max-width: 768px) {
   .nf-gallery-close {
     top: 20px;

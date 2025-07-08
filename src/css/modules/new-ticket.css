@@ -85,7 +85,7 @@
   resize: vertical;
 }
 
-/* Dateiupload - Modern Design */
+/* File upload - modern design */
 .nf-newticket-form .file-upload {
   position: relative;
 }
@@ -124,7 +124,7 @@
   transform: translateY(-1px);
 }
 
-/* Drag & Drop Feedback */
+/* Drag & Drop feedback */
 .file-upload.drag-over .file-upload-label {
   border-color: var(--primary-medium);
   background: var(--primary-lightest);
@@ -138,7 +138,7 @@
   line-height: 1.4;
 }
 
-/* Button-Reihe - Modern Design */
+/* Button row - modern design */
 .nf-newticket-form .nf-btn-row {
   display: flex;
   gap: 1rem;
@@ -202,7 +202,7 @@
   }
 }
 
-/* Responsive Anpassungen */
+/* Responsive adjustments */
 @media (max-width: 700px) {
   .nf-newticket-container {
     width: 98vw;

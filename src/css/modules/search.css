@@ -86,7 +86,7 @@
   border-radius: 2px;
 }
 
-/* Einheitliche Hervorhebung für Titel (gleich wie Fließtext) */
+/* Uniform highlighting for title (same as body text) */
 .nf-search-result-title mark {
   background: var(--highlight-bg);
   color: var(--primary-medium);
