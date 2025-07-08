@@ -63,6 +63,21 @@ const NF_CONFIG = {
                 openTicket: 'Open ticket: {title}',
                 openArticle: 'Open article: {title}'
             },
+            
+            // German ARIA labels (Deutsche ARIA-Beschriftungen)
+            aria_de: {
+                closeMainDialog: 'Hauptdialog schließen',
+                closeTicketList: 'Ticket-Liste schließen',
+                closeTicketDetails: 'Ticket-Details schließen',
+                closeGallery: 'Galerie schließen',
+                previousImage: 'Vorheriges Bild',
+                nextImage: 'Nächstes Bild',
+                closeLogin: 'Anmeldung schließen',
+                closeNewTicket: 'Ticket-Erstellung schließen',
+                galleryView: 'Galerieansicht',
+                openTicket: 'Ticket öffnen: {title}',
+                openArticle: 'Artikel öffnen: {title}'
+            },
             // This is used to hide system-generated emails in the ticket detail view
             // Example: 'IT-Support' hides all emails from the IT-Support system
             // This is useful to avoid cluttering the ticket detail with system messages
@@ -77,6 +92,26 @@ const NF_CONFIG = {
         // Email separators for email content cleanup (used in nf-ticket-detail.js)
         // Adjust this list for your language and organization as needed
         emailSeparators: [
+            'From:', 
+            'Sent:',
+            'To:',
+            'Subject:',
+            'Best regards',
+            'Kind regards',
+            'Department',
+            'Phone:'
+        ],
+        
+        // German email separators (Deutsche E-Mail-Trennzeichen)
+        emailSeparators_de: [
+            'Von:',
+            'Gesendet:',
+            'An:',
+            'Betreff:',
+            'Mit freundlichen Grüßen',
+            'Freundliche Grüße',
+            'Abteilung',
+            'Telefon:',
             'From:', 
             'Sent:',
             'To:',
@@ -164,6 +199,87 @@ const NF_CONFIG = {
                 cancelButton: 'Cancel'
             }
         },
+        
+        // ===============================
+        // GERMAN TRANSLATIONS (Deutsche Übersetzungen)
+        // ===============================
+        labels_de: {
+            // Main modal (Hauptdialog)
+            modalTitle: 'Wie können wir Ihnen helfen?',
+            modalSubtitle: 'Durchsuchen Sie das Wissensportal oder erstellen Sie ein Support-Ticket.',
+            searchPlaceholder: 'Wissensportal durchsuchen…',
+            closeButton: 'Schließen',
+            // Knowledge portal card (Wissensportal-Karte)
+            knowledgePortalTitle: 'Wissensportal',
+            knowledgePortalDesc: 'Finden Sie Antworten auf häufig gestellte Fragen',
+            knowledgePortalButton: 'Zum Wissensportal',
+            // Ticket system card (Ticket-System-Karte)
+            ticketSystemTitle: 'Ticket-System',
+            ticketSystemDesc: 'Erstellen oder verwalten Sie Ihre Support-Anfragen',
+            createTicketButton: 'Ticket erstellen',
+            viewTicketsButton: 'Meine Tickets anzeigen',
+            // Ticket list (Ticket-Liste)
+            ticketListFilters: {
+                active: 'Aktive Tickets',
+                closed: 'Geschlossene Tickets',
+                all: 'Alle Tickets'
+            },
+            ticketListSort: {
+                date_desc: 'Neueste zuerst',
+                date_asc: 'Älteste zuerst',
+                status: 'Nach Status',
+                subject: 'Nach Betreff'
+            },
+            ticketListHeaders: {
+                id: '#',
+                subject: 'Betreff',
+                created: 'Erstellt am',
+                status: 'Status'
+            },
+            ticketListEmpty: 'Keine Tickets gefunden.',
+            reloadButton: 'Neu laden',
+            // Ticket detail (Ticket-Details)
+            ticketDetailActions: {
+                reply: 'Antworten',
+                replyPlaceholder: 'Ihre Antwort...',
+                sendReply: 'Antwort senden',
+                cancelReply: 'Abbrechen',
+                closeTicket: 'Ticket als gelöst markieren'
+            },
+            // Gallery (Galerie)
+            galleryAlt: 'Anhang',
+            // Status mapping (Status-Zuordnung)
+            unknownStatus: 'Unbekannt',
+            // Login (Anmeldung)
+            loginTitle: 'Anmeldung',
+            loginLabels: {
+                username: 'Benutzername',
+                password: 'Passwort',
+                usernamePlaceholder: 'Benutzername',
+                passwordPlaceholder: 'Passwort',
+                submitButton: 'Anmelden'
+            },
+            // Login error messages (Anmelde-Fehlermeldungen)
+            loginErrors: {
+                missingCredentials: 'Benutzername und Passwort sind erforderlich',
+                invalidCredentials: 'Ungültige Anmeldedaten',
+                accountLocked: 'Konto gesperrt',
+                networkError: 'Netzwerkfehler bei der Anmeldung',
+                serverError: 'Serverfehler bei der Anmeldung'
+            },
+            // New ticket (Neues Ticket)
+            newTicketTitle: 'Neues Ticket erstellen',
+            newTicketLabels: {
+                subject: 'Betreff',
+                subjectPlaceholder: 'Eine kurze Zusammenfassung Ihrer Anfrage',
+                body: 'Nachricht',
+                bodyPlaceholder: 'Beschreiben Sie Ihre Anfrage...',
+                attachment: 'Dateianhang (optional)',
+                attachmentText: '📎 Dateien hier hinziehen oder klicken zum Auswählen',
+                submitButton: 'Ticket einreichen',
+                cancelButton: 'Abbrechen'
+            }
+        },
     },
     
     // ===============================
@@ -184,6 +300,14 @@ const NF_CONFIG = {
             credentialsHint: 'Use your Windows credentials to log in', // Credentials hint
             attemptsWarning: 'Error! Is the username/password correct?' // Warning message template
         },
+        
+        // German login messages (Deutsche Anmelde-Nachrichten)
+        login_de: {
+            maxAttempts: 3,
+            lockoutMessage: 'Konto gesperrt. Bitte kontaktieren Sie den Support.',
+            credentialsHint: 'Verwenden Sie Ihre Windows-Anmeldedaten zur Anmeldung',
+            attemptsWarning: 'Fehler! Sind Benutzername/Passwort korrekt?'
+        },
         // Mapping of Zammad status IDs to English labels
         // Go to https://helpdesk.yourdomain.com/api/v1/ticket_states
         // to view the available ticket states and their IDs
@@ -200,6 +324,19 @@ const NF_CONFIG = {
             8: 'Waiting for customer',
             9: 'In progress',
             10: 'Waiting for external'
+        },
+        
+        // German ticket state translations (Deutsche Ticket-Status Übersetzungen)
+        ticketStates_de: {
+            1: 'Neu',
+            2: 'Offen',
+            3: 'Erinnerung ausstehend',
+            4: 'Geschlossen',
+            5: 'Zusammengeführt',
+            7: 'Schließung ausstehend',
+            8: 'Warten auf Kunde',
+            9: 'In Bearbeitung',
+            10: 'Warten auf extern'
         },
         
         // Cache settings for performance optimization
@@ -281,8 +418,54 @@ const NF_CONFIG = {
         ticketListLoadError: 'Error loading tickets: ',
         ticketListFilterError: 'Error filtering tickets: ',
         ticketListStatusSpanMissing: 'statusSpan not found in ticket row template'
+    },
+    
+    // ===============================
+    // GERMAN UTILITY MESSAGES (Deutsche Hilfsprogramm-Nachrichten)
+    // ===============================
+    utilsMessages_de: {
+        localStorageWriteFailed: 'LocalStorage-Schreibvorgang fehlgeschlagen',
+        localStorageReadFailed: 'LocalStorage-Lesevorgang fehlgeschlagen',
+        localStorageRemoveFailed: 'LocalStorage-Löschvorgang fehlgeschlagen',
+        fileTooLarge: 'Datei zu groß. Maximum: {max}MB',
+        fileTypeNotAllowed: 'Dateityp nicht erlaubt',
+        retryAttemptFailed: 'Versuch {attempt} fehlgeschlagen',
+        performanceMarkNotFound: 'Performance-Markierung nicht gefunden: {mark}',
+        ticketListLoadError: 'Fehler beim Laden der Tickets: ',
+        ticketListFilterError: 'Fehler beim Filtern der Tickets: ',
+        ticketListStatusSpanMissing: 'statusSpan nicht in Ticket-Zeilen-Vorlage gefunden'
     }
 };
+
+// ===============================
+// LANGUAGE UTILITY FUNCTIONS
+// ===============================
+NF_CONFIG.getLabels = function(language = 'en') {
+    return language === 'de' ? this.system.labels_de : this.system.labels;
+};
+
+NF_CONFIG.getTicketStates = function(language = 'en') {
+    return language === 'de' ? this.ui.ticketStates_de : this.ui.ticketStates;
+};
+
+NF_CONFIG.getUtilsMessages = function(language = 'en') {
+    return language === 'de' ? this.utilsMessages_de : this.utilsMessages;
+};
+
+NF_CONFIG.getLoginSettings = function(language = 'en') {
+    return language === 'de' ? this.ui.login_de : this.ui.login;
+};
+
+NF_CONFIG.getEmailSeparators = function(language = 'en') {
+    return language === 'de' ? this.system.emailSeparators_de : this.system.emailSeparators;
+};
+
+NF_CONFIG.getAriaLabels = function(language = 'en') {
+    return language === 'de' ? this.system.assets.aria_de : this.system.assets.aria;
+};
+
+// Set default language (can be changed dynamically)
+NF_CONFIG.currentLanguage = 'en'; // Change to 'de' for German by default
 
 // ===============================
 // GLOBAL AVAILABILITY
