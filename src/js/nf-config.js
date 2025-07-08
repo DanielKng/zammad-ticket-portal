@@ -5,6 +5,7 @@
 // This file contains all important configuration settings for the entire
 // ticket frontend. API URLs, UI behavior, security policies
 // and debug options are managed centrally here and can be easily adjusted.
+// You can change the language at the bottom of this file.
 
 // ===============================
 // MAIN CONFIGURATION OBJECT
@@ -165,6 +166,9 @@ const NF_CONFIG = {
                 cancelReply: 'Cancel',
                 closeTicket: 'Mark ticket as resolved'
             },
+            ticketDetailCreated: 'Created:',
+            ticketDetailNumber: 'Ticket No.',
+            ticketDetailLastUpdated: 'Last updated:',
             // Gallery
             galleryAlt: 'Attachment',
             // Status mapping
@@ -246,6 +250,9 @@ const NF_CONFIG = {
                 cancelReply: 'Abbrechen',
                 closeTicket: 'Ticket als gelöst markieren'
             },
+            ticketDetailCreated: 'Erstellt am:',
+            ticketDetailNumber: 'Ticket Nr.',
+            ticketDetailLastUpdated: 'Zuletzt aktualisiert:',
             // Gallery (Galerie)
             galleryAlt: 'Anhang',
             // Status mapping (Status-Zuordnung)
@@ -305,7 +312,7 @@ const NF_CONFIG = {
         login_de: {
             maxAttempts: 3,
             lockoutMessage: 'Konto gesperrt. Bitte kontaktieren Sie den Support.',
-            credentialsHint: 'Verwenden Sie Ihre Windows-Anmeldedaten zur Anmeldung',
+            credentialsHint: 'Verwende deine Windows-Anmeldedaten zur Anmeldung',
             attemptsWarning: 'Fehler! Sind Benutzername/Passwort korrekt?'
         },
         // Mapping of Zammad status IDs to English labels
@@ -434,6 +441,31 @@ const NF_CONFIG = {
         ticketListLoadError: 'Fehler beim Laden der Tickets: ',
         ticketListFilterError: 'Fehler beim Filtern der Tickets: ',
         ticketListStatusSpanMissing: 'statusSpan nicht in Ticket-Zeilen-Vorlage gefunden'
+    },
+    // ===============================
+    // SYSTEM/USER MESSAGES (for notifications, status, etc.)
+    // ===============================
+    messages: {
+        ticketCreated: 'Ticket was created successfully!',
+        missingFields: 'Please fill in all required fields.',
+        fileValidationFailed: 'File validation failed.',
+        missingCredentials: 'Username and password are required',
+        lockoutMessage: 'Account locked. Please contact support.',
+        invalidCredentials: 'Invalid login credentials',
+        attemptsWarning: 'Error! Is the username/password correct?',
+        authFailed: 'Authentication failed ({status})',
+        // ...add more as needed...
+    },
+    messages_de: {
+        ticketCreated: 'Ticket wurde erfolgreich erstellt!',
+        missingFields: 'Bitte füllen Sie alle Pflichtfelder aus.',
+        fileValidationFailed: 'Datei-Überprüfung fehlgeschlagen.',
+        missingCredentials: 'Benutzername und Passwort sind erforderlich',
+        lockoutMessage: 'Konto gesperrt. Bitte kontaktieren Sie den Support.',
+        invalidCredentials: 'Ungültige Anmeldedaten',
+        attemptsWarning: 'Fehler! Sind Benutzername/Passwort korrekt?',
+        authFailed: 'Authentifizierung fehlgeschlagen ({status})',
+        // ...add more as needed...
     }
 };
 

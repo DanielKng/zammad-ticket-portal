@@ -116,7 +116,7 @@ Object.assign(nf, {
             // REQUIRED FIELD VALIDATION
             // ===============================
             if (!subject || !body) {
-                throw new NFError('Please fill in all required fields.', 'MISSING_FIELDS');
+                throw new NFError(nfGetMessage('missingFields'), 'MISSING_FIELDS');
             }
             // ===============================
             // FILE VALIDATION
@@ -126,7 +126,7 @@ Object.assign(nf, {
                     try {
                         NFUtils.validateFile(file);
                     } catch (error) {
-                        throw new NFError(`File "${file.name}": ${error.message}`, 'FILE_VALIDATION_FAILED');
+                        throw new NFError(nfGetMessage('fileValidationFailed', undefined, { file: file.name, error: error.message }), 'FILE_VALIDATION_FAILED');
                     }
                 }
             }
@@ -135,7 +135,7 @@ Object.assign(nf, {
             // API CALL TO CREATE TICKET
             // ===============================
             await nfCreateTicket(subject, body, files);
-            nfShowStatus('Ticket was created successfully!', 'success', 'newticket');
+            nfShowStatus(nfGetMessage('ticketCreated'), 'success', 'newticket');
             // ===============================
             // CACHE INVALIDATION
             // ===============================

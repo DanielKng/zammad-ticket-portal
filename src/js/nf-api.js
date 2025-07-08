@@ -33,7 +33,7 @@ async function nfAuthenticateUser(username, password) {
         
         // Check if both fields are filled
         if (!cleanUsername || !cleanPassword) {
-            const errorMessage = window.NF_CONFIG?.system?.labels?.loginErrors?.missingCredentials || 'Username and password are required';
+            const errorMessage = nfGetMessage('missingCredentials');
             if (typeof NFError !== 'undefined') {
                 throw new NFError(errorMessage, 'MISSING_CREDENTIALS');
             } else {
@@ -77,7 +77,7 @@ async function nfAuthenticateUser(username, password) {
                 if (nf._loginAttempts >= maxAttempts) {
                     // Lock account after too many attempts
                     nf._isAccountLocked = true;
-                    const lockoutMessage = window.NF_CONFIG?.ui?.login?.lockoutMessage;
+                    const lockoutMessage = nfGetMessage('lockoutMessage');
                     const errorMessage = lockoutMessage;
                     if (typeof NFError !== 'undefined') {
                         throw new NFError(errorMessage, 'ACCOUNT_LOCKED');
@@ -88,8 +88,8 @@ async function nfAuthenticateUser(username, password) {
                 
                 // 401 = Unauthorized - invalid credentials
                 // Simplified: no remaining attempts, just a generic warning
-                const errorMessage = 'Invalid credentials';
-                const warningMessage = window.NF_CONFIG?.ui?.login?.attemptsWarning;
+                const errorMessage = nfGetMessage('invalidCredentials');
+                const warningMessage = nfGetMessage('attemptsWarning');
                 if (typeof NFError !== 'undefined') {
                     const error = new NFError(errorMessage, 'INVALID_CREDENTIALS');
                     error.attemptsWarning = warningMessage;
@@ -101,7 +101,7 @@ async function nfAuthenticateUser(username, password) {
                 }
             }
             // Other HTTP errors (500, 503, etc.)
-            const errorMessage = `Authentication failed (${response.status})`;
+            const errorMessage = nfGetMessage('authFailed', undefined, { status: response.status });
             if (typeof NFError !== 'undefined') {
                 throw new NFError(errorMessage, 'AUTH_FAILED');
             } else {

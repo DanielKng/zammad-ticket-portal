@@ -384,6 +384,18 @@ window.nfLogger = nfLogger;
 window.NFPerformance = NFPerformance;
 window.nfPerf = nfPerf;
 
+/**
+ * Returns a system/user message in the current language.
+ * Usage: nfGetMessage('ticketCreated')
+ */
+function nfGetMessage(key, language = window.NF_CONFIG?.currentLanguage || 'en') {
+    const config = window.NF_CONFIG;
+    if (language === 'de' && config.messages_de && config.messages_de[key]) return config.messages_de[key];
+    if (config.messages && config.messages[key]) return config.messages[key];
+    return key;
+}
+window.nfGetMessage = nfGetMessage;
+
 function isAllowedStyle(style, allowedStyles) {
     return allowedStyles.some(allowed => style.trim().startsWith(allowed));
 }

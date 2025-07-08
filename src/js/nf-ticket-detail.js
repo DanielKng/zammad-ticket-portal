@@ -58,9 +58,12 @@ async function nfShowTicketDetailView(ticketId) {
             statusEl.className = 'nf-ticketdetail-status nf-ticketdetail-status--' + (ticket.state_id || 'default');
             statusEl.style.textAlign = 'center';
             statusEl.textContent = nfStateLabel(ticket.state_id);
-            dateEl.textContent = `Created: ${new Date(ticket.created_at).toLocaleString('en-US')}`;
-            ticketNumberEl.textContent = `Ticket No. ${ticket.number}`;
-            updatedDateEl.textContent = `Last updated: ${new Date(ticket.updated_at || ticket.created_at).toLocaleString('en-US')}`;
+            // Language-aware labels and date formatting
+            const labels = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage);
+            const locale = window.NF_CONFIG.currentLanguage === 'de' ? 'de-DE' : 'en-US';
+            dateEl.textContent = `${labels.ticketDetailCreated || 'Created:'} ${new Date(ticket.created_at).toLocaleString(locale)}`;
+            ticketNumberEl.textContent = `${labels.ticketDetailNumber || 'Ticket No.'} ${ticket.number}`;
+            updatedDateEl.textContent = `${labels.ticketDetailLastUpdated || 'Last updated:'} ${new Date(ticket.updated_at || ticket.created_at).toLocaleString(locale)}`;
             processorEl.textContent = agentName;
         } else {
             // ===============================
