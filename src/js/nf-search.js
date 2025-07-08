@@ -116,77 +116,64 @@ function nfShowSearchDropdown(resultsRaw, query) {
     // ITERATE AND DISPLAY RESULTS
     // ===============================
     details.forEach(res => {
-        let div;  // Container for single search result
-        
+        let div;  // Container für ein Suchergebnis
+        let title = res.title || '';
+        let summary = '';
         // ===============================
         // TEMPLATE-BASED CREATION
         // ===============================
         if (searchResultTemplate) {
-            // Use predefined HTML template
+            // Template klonen
             div = searchResultTemplate.firstElementChild.cloneNode(true);  // Deep Clone
-            
             // ===============================
-            // PROCESS TITLE WITH HIGHLIGHTING
+            // TITLE MIT HIGHLIGHTING
             // ===============================
-            let title = res.title || '';
-            // Check for highlighting in title from API
             if (highlights[res.id] && highlights[res.id]["content.title"]) {
-                title = highlights[res.id]["content.title"].join(' ');  // Use API highlighting
+                title = highlights[res.id]["content.title"].join(' ');
             }
-            
-            // Convert <em> tags in title to <mark> for better visibility
             if (/<em>/.test(title)) {
                 title = title.replace(/<em>(.*?)<\/em>/g, '<mark>$1</mark>');
-                div.querySelector('.nf-search-result-title').innerHTML = title;  // Use innerHTML for HTML tags
             } else {
-                // If no highlighting, add our own
-                const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+                const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&') + ')', 'gi');
                 title = title.replace(re, '<mark>$1</mark>');
-                div.querySelector('.nf-search-result-title').innerHTML = title;
             }
-            
             // ===============================
-            // CONTENT SUMMARY WITH HIGHLIGHTING
+            // SUMMARY MIT HIGHLIGHTING
             // ===============================
-            let summary = '';
-            // Prefer API highlights if available
             if (highlights[res.id] && highlights[res.id]["content.body"]) {
-                summary = highlights[res.id]["content.body"].join(' ... ');  // Join highlight snippets
+                summary = highlights[res.id]["content.body"].join(' ... ');
             } else {
-                summary = res.body || '';  // Fallback to full body
+                summary = res.body || '';
             }
-            
-            // ===============================
-            // SEARCH TERM HIGHLIGHTING IN SUMMARY
-            // ===============================
             if (!/<em>/.test(summary)) {
-                // If no highlighting, add our own
-                const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
-                summary = summary.replace(re, '<mark>$1</mark>');  // Wrap search term in <mark>
+                const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&') + ')', 'gi');
+                summary = summary.replace(re, '<mark>$1</mark>');
             } else {
-                // Convert Zammad <em> tags to <mark> for consistent styling
                 summary = summary.replace(/<em>(.*?)<\/em>/g, '<mark>$1</mark>');
             }
-            
-            // Set formatted summary in template
-            div.querySelector('.nf-search-result-summary').innerHTML = summary;
-            // Set link and ARIA for title
-            const helpdeskBase = window.NF_CONFIG?.links?.helpdeskBase;
-            const titleLink = div.querySelector('.nf-search-result-title');
-            if (titleLink) {
-                titleLink.href = helpdeskBase + res.url;
-                titleLink.setAttribute('target', '_blank');
-                titleLink.setAttribute('rel', 'noopener');
-                titleLink.setAttribute('role', 'heading');
-                titleLink.setAttribute('aria-level', '3');
-                const ariaLabelTemplate = window.NF_CONFIG?.system?.assets?.aria?.openArticle || 'Open article: {title}';
-                titleLink.setAttribute('aria-label', ariaLabelTemplate.replace('{title}', res.title || ''));
-                // Click on link closes dropdown
-                titleLink.addEventListener('click', (ev) => {
-                    nf.searchDropdown.style.display = 'none';
-                    // No window.open needed, href+target is set
-                });
+            // ===============================
+            // Link-Element entfernen, stattdessen nur Text/Div
+            // ===============================
+            const titleElem = div.querySelector('.nf-search-result-title');
+            if (titleElem) {
+                titleElem.innerHTML = title;
+                titleElem.removeAttribute('href');
+                titleElem.removeAttribute('tabindex');
+                titleElem.style.cursor = 'inherit';
             }
+            div.querySelector('.nf-search-result-summary').innerHTML = summary;
+            // ===============================
+            // Klick-Handler auf das gesamte Ergebnis
+            // ===============================
+            const helpdeskBase = window.NF_CONFIG?.links?.helpdeskBase;
+            div.style.cursor = 'pointer';
+            div.addEventListener('click', () => {
+                window.open(helpdeskBase + res.url, '_blank');
+                nf.searchDropdown.style.display = 'none';
+            });
+            // Optional: Hover-Effekt
+            div.addEventListener('mouseenter', () => div.classList.add('nf-search-result--hover'));
+            div.addEventListener('mouseleave', () => div.classList.remove('nf-search-result--hover'));
         } else {
             // ===============================
             // FALLBACK: PROGRAMMATIC CREATION
@@ -194,68 +181,41 @@ function nfShowSearchDropdown(resultsRaw, query) {
             // If no template, create element programmatically
             div = document.createElement('div');
             div.className = 'nf-search-result';
-            div.style.padding = '0.7rem 1.2rem';      // Padding
-            div.style.cursor = 'pointer';              // Pointer cursor for clickability
-            div.style.borderBottom = '1px solid #f0f0f0'; // Divider between results
-            
-            let title = res.title || '';               // Article title
-            let summary = '';                          // Article summary
-            
-            // ===============================
-            // TITLE HIGHLIGHTING FOR FALLBACK
-            // ===============================
-            // Check for highlighting in title from API
+            div.style.padding = '0.7rem 1.2rem';
+            div.style.cursor = 'pointer';
+            div.style.borderBottom = '1px solid #f0f0f0';
             if (highlights[res.id] && highlights[res.id]["content.title"]) {
-                title = highlights[res.id]["content.title"].join(' ');  // Use API highlighting
+                title = highlights[res.id]["content.title"].join(' ');
             }
-            
-            // Convert <em> tags in title to <mark> or add our own highlighting
             if (/<em>/.test(title)) {
                 title = title.replace(/<em>(.*?)<\/em>/g, '<mark>$1</mark>');
             } else {
-                // If no highlighting, add our own
-                const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+                const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&') + ')', 'gi');
                 title = title.replace(re, '<mark>$1</mark>');
             }
-            
-            // ===============================
-            // CONTENT PROCESSING FOR FALLBACK
-            // ===============================
-            // Same highlighting logic as template version
             if (highlights[res.id] && highlights[res.id]["content.body"]) {
                 summary = highlights[res.id]["content.body"].join(' ... ');
             } else {
                 summary = res.body || '';
             }
-            
-            // ===============================
-            // SUMMARY HIGHLIGHTING FOR FALLBACK
-            // ===============================
             if (!/<em>/.test(summary)) {
-                // Escape regex special characters in search term
-                const re = new RegExp('('+query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')+')', 'gi');
+                const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&') + ')', 'gi');
                 summary = summary.replace(re, '<mark>$1</mark>');
             } else {
                 summary = summary.replace(/<em>(.*?)<\/em>/g, '<mark>$1</mark>');
             }
-            
-            // ===============================
-            // HTML STRUCTURE FOR FALLBACK
-            // ===============================
             div.innerHTML = `
                 <div style='font-weight:600;font-size:1.1rem;'>${title}</div>
                 <div class='nf-search-result-summary' style='font-size:0.97rem;color:#555;'>${summary}</div>
             `;
-            // ===============================
-            // CLICK HANDLER FOR FALLBACK
-            // ===============================
+            const helpdeskBase = window.NF_CONFIG?.links?.helpdeskBase;
             div.addEventListener('click', () => {
-                const helpdeskBase = window.NF_CONFIG?.links?.helpdeskBase;
                 window.open(helpdeskBase + res.url, '_blank');
                 nf.searchDropdown.style.display = 'none';
             });
+            div.addEventListener('mouseenter', () => div.classList.add('nf-search-result--hover'));
+            div.addEventListener('mouseleave', () => div.classList.remove('nf-search-result--hover'));
         }
-        
         // ===============================
         // ADD RESULT TO DROPDOWN
         // ===============================
