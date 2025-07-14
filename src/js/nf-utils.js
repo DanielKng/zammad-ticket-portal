@@ -24,7 +24,7 @@ class NFLogger {
     constructor(config = {}) {
         this.enabled = config.enabled || false;           // Logger on/off (should be false in production)
         this.level = config.logLevel || 'info';           // Default log level
-        this.levels = { debug: 0, info: 1, warn: 2, error: 3 }; // Numeric level mapping for comparisons
+        this.levels = { verbose: -1, debug: 0, info: 1, warn: 2, error: 3 }; // Numeric level mapping for comparisons
     }
     
     /**
@@ -34,20 +34,38 @@ class NFLogger {
      * @param {*} data - Optional additional data (objects, arrays, etc.)
      */
     log(level, message, data = null) {
-        // Check if logging is enabled and level is high enough
-        if (!this.enabled || this.levels[level] < this.levels[this.level]) return;
-        
-        // Create timestamp and prefix for structured log output
-        const timestamp = new Date().toISOString();          // ISO format for international compatibility
+        if (!this.enabled) return;
+        // Only log if level is >= configured level
+        if (this.levels[level] < this.levels[this.level]) return;
+        const timestamp = new Date().toISOString();
         const prefix = `[NF-${level.toUpperCase()}] ${timestamp}:`;
-        
-        // Output with or without additional data
         if (data) {
-            console[level](prefix, message, data);
+            if (level === 'error') {
+                console.error(prefix, message, data);
+            } else if (level === 'warn') {
+                console.warn(prefix, message, data);
+            } else if (level === 'info') {
+                console.info(prefix, message, data);
+            } else if (level === 'debug') {
+                console.debug(prefix, message, data);
+            } else {
+                console.log(prefix, message, data);
+            }
         } else {
-            console[level](prefix, message);
+            if (level === 'error') {
+                console.error(prefix, message);
+            } else if (level === 'warn') {
+                console.warn(prefix, message);
+            } else if (level === 'info') {
+                console.info(prefix, message);
+            } else if (level === 'debug') {
+                console.debug(prefix, message);
+            } else {
+                console.log(prefix, message);
+            }
         }
     }
+    verbose(message, data) { this.log('verbose', message, data); }
     debug(message, data) { this.log('debug', message, data); }
     info(message, data) { this.log('info', message, data); }
     warn(message, data) { this.log('warn', message, data); }
@@ -58,7 +76,15 @@ class NFLogger {
 // GLOBAL LOGGER INSTANCE
 // ===============================
 // Create central logger instance with config from NF_CONFIG
-const nfLogger = new NFLogger(NF_CONFIG?.debug || {});
+let nfLogger;
+if (typeof window !== 'undefined' && window.NF_CONFIG && window.NF_CONFIG.debug) {
+    nfLogger = new NFLogger({
+        enabled: !!window.NF_CONFIG.debug.enabled,
+        logLevel: window.NF_CONFIG.debug.logLevel
+    });
+} else {
+    nfLogger = new NFLogger({ enabled: false, logLevel: 'info' });
+}
 
 // ===============================
 // ADVANCED ERROR CLASS FOR STRUCTURED ERROR HANDLING
@@ -218,7 +244,7 @@ const NFUtils = {
                 localStorage.setItem(key, JSON.stringify(value));
                 return true;
             } catch (e) {
-                nfLogger.warn(NF_CONFIG.utilsMessages.localStorageWriteFailed, { key, error: e.message });
+                nfLogger.warn(window.nfLang.getUtilsMessage('localStorageWriteFailed'), { key, error: e.message });
                 return false;
             }
         },
@@ -233,7 +259,7 @@ const NFUtils = {
                 const item = localStorage.getItem(key);
                 return item ? JSON.parse(item) : defaultValue;
             } catch (e) {
-                nfLogger.warn(NF_CONFIG.utilsMessages.localStorageReadFailed, { key, error: e.message });
+                nfLogger.warn(window.nfLang.getUtilsMessage('localStorageReadFailed'), { key, error: e.message });
                 return defaultValue;
             }
         },
@@ -247,7 +273,7 @@ const NFUtils = {
                 localStorage.removeItem(key);
                 return true;
             } catch (e) {
-                nfLogger.warn(NF_CONFIG.utilsMessages.localStorageRemoveFailed, { key, error: e.message });
+                nfLogger.warn(window.nfLang.getUtilsMessage('localStorageRemoveFailed'), { key, error: e.message });
                 return false;
             }
         }
@@ -275,7 +301,7 @@ const NFUtils = {
         // ===============================
         if (file.size > maxSize) {
             throw new NFError(
-                NF_CONFIG.utilsMessages.fileTooLarge.replace('{max}', (maxSize / 1024 / 1024).toFixed(1)),
+                window.nfLang.getUtilsMessage('fileTooLarge', { max: (maxSize / 1024 / 1024).toFixed(1) }),
                 'FILE_TOO_LARGE',
                 { fileSize: file.size, maxSize }
             );
@@ -285,7 +311,7 @@ const NFUtils = {
         // ===============================
         if (allowedTypes.length > 0 && !allowedTypes.includes(file.type)) {
             throw new NFError(
-                NF_CONFIG.utilsMessages.fileTypeNotAllowed,
+                window.nfLang.getUtilsMessage('fileTypeNotAllowed'),
                 'FILE_TYPE_NOT_ALLOWED',
                 { fileType: file.type, allowedTypes }
             );
@@ -311,7 +337,7 @@ const NFUtils = {
             try {
                 return await fn();
             } catch (error) {
-                nfLogger?.warn(NF_CONFIG.utilsMessages.retryAttemptFailed.replace('{attempt}', attempt), { error: error.message });
+                nfLogger?.warn(window.nfLang.getUtilsMessage('retryAttemptFailed', { attempt }), { error: error.message });
                 if (attempt === maxAttempts) throw error;
                 await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, attempt - 1)));
             }
@@ -349,7 +375,7 @@ class NFPerformance {
     measure(measureName, startMark) {
         const startTime = this.marks.get(startMark);
         if (!startTime) {
-            nfLogger.warn(NF_CONFIG.utilsMessages.performanceMarkNotFound.replace('{mark}', startMark));
+            nfLogger.warn(window.nfLang.getUtilsMessage('performanceMarkNotFound', { mark: startMark }));
             return;
         }
         const endTime = performance.now();
@@ -381,18 +407,17 @@ window.NFLogger = NFLogger;
 window.NFError = NFError;
 window.NFUtils = NFUtils;
 window.nfLogger = nfLogger;
+window.nfReinitializeLogger = nfReinitializeLogger;
 window.NFPerformance = NFPerformance;
 window.nfPerf = nfPerf;
 
+// Use nfLabels for message and label lookups instead of repeated config calls
 /**
  * Returns a system/user message in the current language.
  * Usage: nfGetMessage('ticketCreated')
  */
-function nfGetMessage(key, language = window.NF_CONFIG?.currentLanguage || 'en') {
-    const config = window.NF_CONFIG;
-    if (language === 'de' && config.messages_de && config.messages_de[key]) return config.messages_de[key];
-    if (config.messages && config.messages[key]) return config.messages[key];
-    return key;
+function nfGetMessage(key, placeholders = {}) {
+    return window.nfLang.getMessage(key, placeholders);
 }
 window.nfGetMessage = nfGetMessage;
 
@@ -402,4 +427,27 @@ function isAllowedStyle(style, allowedStyles) {
 
 function hasProblematicColor(style, problematicColors) {
     return problematicColors.some(color => style.includes(color));
+}
+
+// ===============================
+// LOGGER REINITIALIZATION FUNCTION
+// ===============================
+/**
+ * Reinitializes the logger with current NF_CONFIG values
+ * This should be called after NF_CONFIG is fully loaded
+ */
+function nfReinitializeLogger() {
+    if (typeof window !== 'undefined' && window.NF_CONFIG && window.NF_CONFIG.debug) {
+        nfLogger = new NFLogger({
+            enabled: !!window.NF_CONFIG.debug.enabled,
+            logLevel: window.NF_CONFIG.debug.logLevel || 'info'
+        });
+        nfLogger.debug('Logger reinitialized with config', {
+            enabled: !!window.NF_CONFIG.debug.enabled,
+            logLevel: window.NF_CONFIG.debug.logLevel || 'info'
+        });
+    } else {
+        nfLogger = new NFLogger({ enabled: false, logLevel: 'info' });
+        nfLogger.warn('Logger reinitialized with defaults - NF_CONFIG not available');
+    }
 }

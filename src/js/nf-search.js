@@ -6,6 +6,11 @@
 // with autocomplete, search term highlighting, and a user-friendly
 // dropdown with search results. Uses debouncing for performance optimization.
 
+import { nfApiPost } from './nf-api-utils.js';
+import { nfCloneTemplate } from './nf-template-utils.js';
+import { NF_CONFIG } from './nf-config.js';
+import { nf, ZAMMAD_API_URL } from './nf-dom.js';
+
 // ===============================
 // KNOWLEDGEBASE SEARCH (API INTEGRATION)
 // ===============================
@@ -13,17 +18,50 @@
 /**
  * Performs a search in the Zammad knowledge base
  * Uses the official Zammad API for Knowledge Base Search
+ * Implements caching with configurable TTL from nf-config.js
  * 
  * @param {string} query - Search term from the user
- * @returns {Promise<Object>} Search results from Zammad API or throws error
+ * @returns {Promise<Object>} Search results from Zammad API or cache
  */
 async function nfSearchKnowledgebase(query) {
     try {
         // ===============================
+        // CACHE CHECK
+        // ===============================
+        const cacheKey = `search_${query.toLowerCase().trim()}`;
+        
+        if (typeof window.nfCache !== 'undefined') {
+            const cached = window.nfCache.get(cacheKey);
+            if (cached) {
+                window.nfLogger.debug('Search results loaded from cache', {
+                    query,
+                    cacheKey,
+                    resultCount: cached?.details?.length || 0
+                });
+                return cached;
+            }
+        }
+        
+        // ===============================
         // API REQUEST CONFIGURATION
         // ===============================
-        const kbConfig = window.NF_CONFIG?.api?.knowledgeBase || {};
-        const res = await fetch(`${ZAMMAD_API_URL}/knowledge_bases/search`, {
+        const kbConfig = NF_CONFIG?.api?.knowledgeBase || {};
+        const apiUrl = ZAMMAD_API_URL();
+        
+        window.nfLogger.debug('Search API configuration', {
+            query,
+            apiUrl,
+            hasConfig: !!NF_CONFIG,
+            kbConfig,
+            fullUrl: `${apiUrl}/knowledge_bases/search`
+        });
+        
+        if (!apiUrl) {
+            throw new Error('ZAMMAD_API_URL is not defined or returns undefined');
+        }
+        
+        // Use direct fetch
+        const res = await fetch(`${apiUrl}/knowledge_bases/search`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -33,11 +71,39 @@ async function nfSearchKnowledgebase(query) {
                 flavor: kbConfig.flavor       // Access mode from config
             })
         });
+        
         // ===============================
         // RESPONSE VALIDATION
         // ===============================
         if (!res.ok) throw new Error('Search failed');
-        return await res.json();  // Return JSON response
+        
+        const result = await res.json();  // Return JSON response
+        
+        // ===============================
+        // CACHE RESULTS
+        // ===============================
+        if (typeof window.nfCache !== 'undefined') {
+            const searchTTL = NF_CONFIG.ui.cache.searchResultsTTL;
+            window.nfCache.set(cacheKey, result, searchTTL);
+            
+            window.nfLogger.debug('Search results cached', {
+                query,
+                cacheKey,
+                resultCount: result?.details?.length || 0,
+                ttl: `${searchTTL / 1000}s`,
+                persistedToLocalStorage: true
+            });
+        }
+        
+        window.nfLogger.debug('Search completed successfully', {
+            query,
+            resultCount: result?.details?.length || 0,
+            detailsStructure: result?.details,
+            fromCache: false
+        });
+        
+        return result;
+        
     } catch (e) {
         throw e;  // Pass error to calling function
     }
@@ -124,7 +190,7 @@ function nfShowSearchDropdown(resultsRaw, query) {
         // ===============================
         if (searchResultTemplate) {
             // Template cloning
-            div = searchResultTemplate.firstElementChild.cloneNode(true);  // Deep Clone
+            div = nfCloneTemplate(searchResultTemplate.firstElementChild, 'div');  // Use utility for safe cloning
             // ===============================
             // TITLE WITH HIGHLIGHTING
             // ===============================
@@ -165,7 +231,7 @@ function nfShowSearchDropdown(resultsRaw, query) {
             // ===============================
             // Click-Handler on the result
             // ===============================
-            const helpdeskBase = window.NF_CONFIG?.links?.helpdeskBase;
+            const helpdeskBase = NF_CONFIG?.links?.helpdeskBase;
             div.style.cursor = 'pointer';
             div.addEventListener('click', () => {
                 window.open(helpdeskBase + res.url, '_blank');
@@ -174,48 +240,7 @@ function nfShowSearchDropdown(resultsRaw, query) {
             // Optional: Hover-effect
             div.addEventListener('mouseenter', () => div.classList.add('nf-search-result--hover'));
             div.addEventListener('mouseleave', () => div.classList.remove('nf-search-result--hover'));
-        } else {
-            // ===============================
-            // FALLBACK: PROGRAMMATIC CREATION
-            // ===============================
-            // If no template, create element programmatically
-            div = document.createElement('div');
-            div.className = 'nf-search-result';
-            div.style.padding = '0.7rem 1.2rem';
-            div.style.cursor = 'pointer';
-            div.style.borderBottom = '1px solid #f0f0f0';
-            if (highlights[res.id] && highlights[res.id]["content.title"]) {
-                title = highlights[res.id]["content.title"].join(' ');
-            }
-            if (/<em>/.test(title)) {
-                title = title.replace(/<em>(.*?)<\/em>/g, '<mark>$1</mark>');
-            } else {
-                const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&') + ')', 'gi');
-                title = title.replace(re, '<mark>$1</mark>');
-            }
-            if (highlights[res.id] && highlights[res.id]["content.body"]) {
-                summary = highlights[res.id]["content.body"].join(' ... ');
-            } else {
-                summary = res.body || '';
-            }
-            if (!/<em>/.test(summary)) {
-                const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&') + ')', 'gi');
-                summary = summary.replace(re, '<mark>$1</mark>');
-            } else {
-                summary = summary.replace(/<em>(.*?)<\/em>/g, '<mark>$1</mark>');
-            }
-            div.innerHTML = `
-                <div style='font-weight:600;font-size:1.1rem;'>${title}</div>
-                <div class='nf-search-result-summary' style='font-size:0.97rem;color:#555;'>${summary}</div>
-            `;
-            const helpdeskBase = window.NF_CONFIG?.links?.helpdeskBase;
-            div.addEventListener('click', () => {
-                window.open(helpdeskBase + res.url, '_blank');
-                nf.searchDropdown.style.display = 'none';
-            });
-            div.addEventListener('mouseenter', () => div.classList.add('nf-search-result--hover'));
-            div.addEventListener('mouseleave', () => div.classList.remove('nf-search-result--hover'));
-        }
+        } 
         // ===============================
         // ADD RESULT TO DROPDOWN
         // ===============================
@@ -265,7 +290,7 @@ function nfInitializeSearch() {
     // LOAD CONFIGURATION
     // ===============================
     // Load minimum search term length from configuration
-    const minLength = window.NF_CONFIG?.ui?.searchMinLength || 2;
+    const minLength = NF_CONFIG?.ui?.searchMinLength || 2;
     
     // ===============================
     // DEBOUNCED SEARCH FUNCTION
@@ -330,3 +355,5 @@ function handleClickOutside(ev) {
         nfHideSearchDropdown();
     }
 }
+
+export { nfInitializeSearch, nfHideSearchDropdown };

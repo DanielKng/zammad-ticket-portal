@@ -6,6 +6,17 @@
 // It handles loading and displaying ticket details, message history,
 // header information, and email content processing.
 
+import { nfApiGet } from './nf-api-utils.js';
+import { nfFetchTicketDetail } from './nf-api.js';
+import { nfCloneTemplate } from './nf-template-utils.js';
+import { NF_CONFIG } from './nf-config.js';
+import { nf } from './nf-dom.js';
+import { nfSetLoading, nfStateLabel } from './nf-helpers.js';
+import { nfShowStatus } from './nf-status.js';
+import { nfShowTicketDetail } from './nf-ui.js';
+import { nfSetupReplyInterface } from './nf-ticket-actions.js';
+import { nfIsImageFile, nfOpenGalleryForAttachment } from './nf-gallery.js';
+
 // ===============================
 // TICKET-DETAIL-ANSICHT ANZEIGEN
 // ===============================
@@ -17,122 +28,110 @@
  * @param {number} ticketId - ID of the ticket to display
  */
 async function nfShowTicketDetailView(ticketId) {
+    console.log('nfShowTicketDetailView called', ticketId);
     try {
         nfSetLoading(true);  // Show loading spinner during API calls
-        // ===============================
-        // LOAD TICKET DATA AND MESSAGES
-        // ===============================
-        const ticket = await nfFetchTicketDetail(ticketId);  // Load full ticket data
-        nf.ticketDetailHeader.innerHTML = '';               // Clear previous header content
-        // ===============================
-        // LOAD AGENT INFORMATION
-        // ===============================
-        // Get template for ticket header
+        window.nfLogger.debug('nfShowTicketDetailView: ticketId', { ticketId });
+        // LOAD TICKET DATA
+        const ticket = await nfFetchTicketDetail(ticketId);
+        window.nfLogger.debug('Loaded ticket', ticket);
+        if (!ticket || typeof ticket !== 'object') {
+            window.nfLogger.error('Ticket data invalid or not loaded', { ticket });
+            nfShowStatus('Ticket data could not be loaded or is invalid.', 'error', 'ticketdetail');
+            return;
+        }
+        // CHECK DOM ELEMENTS
+        window.nfLogger.debug('Checking DOM elements', {
+            ticketDetailHeader: nf.ticketDetailHeader,
+            ticketDetailMessages: nf.ticketDetailMessages
+        });
+        if (!nf.ticketDetailHeader) {
+            window.nfLogger.error('ticketDetailHeader missing', {});
+            nfShowStatus('Ticket detail header DOM element missing. Please check your HTML structure.', 'error', 'ticketdetail');
+            return;
+        }
+        if (!nf.ticketDetailMessages) {
+            window.nfLogger.error('ticketDetailMessages missing', {});
+            nfShowStatus('Ticket detail messages DOM element missing. Please check your HTML structure.', 'error', 'ticketdetail');
+            return;
+        }
+        nf.ticketDetailHeader.innerHTML = '';
+        // CHECK TEMPLATES
         const headerTemplate = nf.templates.ticketDetailHeader;
-        let headerCard;     // Container for header information
+        const msgTemplate = nf.templates.ticketDetailMessage;
+        window.nfLogger.debug('Checking templates', {
+            headerTemplate,
+            msgTemplate
+        });
+        if (!headerTemplate || !headerTemplate.firstElementChild) {
+            window.nfLogger.error('Ticket header template missing or empty', { headerTemplate });
+            nfShowStatus('Ticket header template missing or empty. Please check your HTML templates.', 'error', 'ticketdetail');
+            return;
+        }
+        if (!msgTemplate || !msgTemplate.firstElementChild) {
+            window.nfLogger.error('Ticket message template missing or empty', { msgTemplate });
+            nfShowStatus('Ticket message template missing or empty. Please check your HTML templates.', 'error', 'ticketdetail');
+            return;
+        }
+        let headerCard;
         let agentName = '';
-        // Load agent name if ticket is assigned
         if (ticket.owner_id) {
             try {
                 agentName = await nfFetchUserNameById(ticket.owner_id) || '';
             } catch (e) {
-                agentName = '';  // Fallback on error
+                window.nfLogger.warn('Failed to fetch agent name', { error: e });
+                agentName = '';
             }
         }
         // ===============================
         // CREATE HEADER WITH TEMPLATE
         // ===============================
-        if (headerTemplate) {
-            // Use predefined HTML template
-            headerCard = headerTemplate.firstElementChild.cloneNode(true);
-            // ===============================
-            // FILL TEMPLATE FIELDS
-            // ===============================
+        if (headerTemplate && headerTemplate.firstElementChild) {
+            headerCard = nfCloneTemplate(headerTemplate.firstElementChild, 'div');
+            window.nfLogger.debug('Cloned headerCard', { headerCard });
             const titleEl = headerCard.querySelector('.nf-ticketdetail-title');
             const statusEl = headerCard.querySelector('.nf-ticketdetail-status');
             const dateEl = headerCard.querySelector('.nf-ticketdetail-date');
             const ticketNumberEl = headerCard.querySelector('.nf-ticketdetail-ticket-number');
             const updatedDateEl = headerCard.querySelector('.nf-ticketdetail-updated-date');
             const processorEl = headerCard.querySelector('.nf-ticketdetail-processor');
+            window.nfLogger.debug('Header fields', {titleEl, statusEl, dateEl, ticketNumberEl, updatedDateEl, processorEl});
+            if (!titleEl || !statusEl || !dateEl || !ticketNumberEl || !updatedDateEl || !processorEl) {
+                window.nfLogger.error('Ticket detail header template missing fields', {titleEl, statusEl, dateEl, ticketNumberEl, updatedDateEl, processorEl});
+                nfShowStatus('Ticket detail header template is missing required fields.', 'error', 'ticketdetail');
+                return;
+            }
             titleEl.textContent = ticket.title || '';
             statusEl.className = 'nf-ticketdetail-status nf-ticketdetail-status--' + (ticket.state_id || 'default');
             statusEl.style.textAlign = 'center';
             statusEl.textContent = nfStateLabel(ticket.state_id);
-            // Language-aware labels and date formatting
-            const labels = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage);
-            const locale = window.NF_CONFIG.currentLanguage === 'de' ? 'de-DE' : 'en-US';
-            dateEl.textContent = `${labels.ticketDetailCreated || 'Created:'} ${new Date(ticket.created_at).toLocaleString(locale)}`;
-            ticketNumberEl.textContent = `${labels.ticketDetailNumber || 'Ticket No.'} ${ticket.number}`;
-            updatedDateEl.textContent = `${labels.ticketDetailLastUpdated || 'Last updated:'} ${new Date(ticket.updated_at || ticket.created_at).toLocaleString(locale)}`;
+            const locale = window.nfLang.getCurrentLocale();
+            dateEl.textContent = `${window.nfLang.getLabel('ticketDetailCreated')} ${new Date(ticket.created_at).toLocaleString(locale)}`;
+            ticketNumberEl.textContent = `${window.nfLang.getLabel('ticketDetailNumber')} ${ticket.number}`;
+            updatedDateEl.textContent = `${window.nfLang.getLabel('ticketDetailLastUpdated')} ${new Date(ticket.updated_at || ticket.created_at).toLocaleString(locale)}`;
             processorEl.textContent = agentName;
         } else {
-            // ===============================
-            // FALLBACK: PROGRAMMATIC HEADER CREATION
-            // ===============================
-            headerCard = document.createElement('div');
-            headerCard.className = 'nf-ticketdetail-headercard nf-ticketdetail-headercard--fullwidth';
-            const headerInfo = document.createElement('div');
-            headerInfo.className = 'nf-ticketdetail-headerinfo';
-            // ===============================
-            // TITLE AND STATUS ROW
-            // ===============================
-            const titleRow = document.createElement('div');
-            titleRow.className = 'nf-ticketdetail-title-row';
-            const title = document.createElement('div');
-            title.className = 'nf-ticketdetail-title';
-            title.textContent = ticket.title || '';
-            const status = document.createElement('div');
-            status.className = 'nf-ticketdetail-status nf-ticketdetail-status--' + (ticket.state_id || 'default');
-            status.style.textAlign = 'center';
-            status.textContent = nfStateLabel(ticket.state_id);
-            titleRow.appendChild(title);
-            titleRow.appendChild(status);
-            // ===============================
-            // META INFORMATION (DATE AND TICKET NUMBER)
-            // ===============================
-            const metaRow = document.createElement('div');
-            metaRow.className = 'nf-ticketdetail-meta-row';
-            const dateInfo = document.createElement('div');
-            dateInfo.className = 'nf-ticketdetail-date';
-            dateInfo.textContent = `Created: ${new Date(ticket.created_at).toLocaleString('en-US')}`;
-            const ticketInfo = document.createElement('div');
-            ticketInfo.className = 'nf-ticketdetail-ticket-number';
-            ticketInfo.textContent = `Ticket No. ${ticket.number}`;
-            metaRow.appendChild(dateInfo);
-            metaRow.appendChild(ticketInfo);
-            // ===============================
-            // UPDATED AT AND AGENT
-            // ===============================
-            const updatedRow = document.createElement('div');
-            updatedRow.className = 'nf-ticketdetail-updated-row';
-            const updatedDate = document.createElement('div');
-            updatedDate.className = 'nf-ticketdetail-updated-date';
-            updatedDate.textContent = `Last updated: ${new Date(ticket.updated_at || ticket.created_at).toLocaleString('en-US')}`;
-            const processorInfo = document.createElement('div');
-            processorInfo.className = 'nf-ticketdetail-processor';
-            processorInfo.textContent = agentName;
-            updatedRow.appendChild(updatedDate);
-            updatedRow.appendChild(processorInfo);
-            // ===============================
-            // BUILD HEADER STRUCTURE
-            // ===============================
-            headerInfo.appendChild(titleRow);
-            headerInfo.appendChild(metaRow);
-            headerInfo.appendChild(updatedRow);
-            headerCard.appendChild(headerInfo);
+            window.nfLogger.error('Ticket header template not found', {});
+            nfShowStatus('Ticket header template missing. Please check your HTML templates.', 'error', 'ticketdetail');
+            return;
         }
         // ===============================
         // ADD HEADER TO DOM
         // ===============================
+        window.nfLogger.debug('Appending headerCard to ticketDetailHeader', { headerCard });
         nf.ticketDetailHeader.appendChild(headerCard);
         // ===============================
         // PREPARE MESSAGES AREA
         // ===============================
-        nf.ticketDetailMessages.innerHTML = '';  // Clear previous messages
+        window.nfLogger.debug('Clearing ticketDetailMessages');
+        nf.ticketDetailMessages.innerHTML = '';
+        // Debug: msgTemplate
+        console.debug('[DEBUG] msgTemplate:', msgTemplate);
         // ===============================
         // ARTICLE FILTERING FOR USER VIEW
         // ===============================
         // Only show relevant messages for the end user (no internal notes, etc.)
+        window.nfLogger.debug('Filtering articles', { articles: ticket.articles });
         const visibleArticles = (ticket.articles || []).filter(a => {
             // ===============================
             // HIDE INTERNAL NOTES
@@ -150,8 +149,8 @@ async function nfShowTicketDetailView(ticketId) {
             // HIDE AUTOMATIC SYSTEM EMAILS
             // ===============================
             // Specific filter for system emails
-            const supportEmail = window.NF_CONFIG?.system?.supportEmail;
-            const systemEmailFilter = window.NF_CONFIG?.system?.assets?.systemEmailFilter || [];
+            const supportEmail = NF_CONFIG?.system?.supportEmail;
+            const systemEmailFilter = NF_CONFIG?.system?.assets?.systemEmailFilter || [];
             if (a.from && systemEmailFilter.some(filterStr => a.from.includes(filterStr)) && 
                 a.from.includes(supportEmail)) {
                 return false;
@@ -194,58 +193,41 @@ async function nfShowTicketDetailView(ticketId) {
         // MESSAGE DISPLAY
         // ===============================
         // Get template for message display
-        const msgTemplate = nf.templates.ticketDetailMessage;
         // ===============================
         // RENDER EACH VISIBLE MESSAGE
         // ===============================
         visibleArticles.forEach(article => {
-            let msgDiv;  // Container for single message
-            // ===============================
-            // TEMPLATE-BASED MESSAGE
-            // ===============================
+            window.nfLogger.debug('Rendering article', { article });
+            let msgDiv;
             if (msgTemplate) {
-                msgDiv = msgTemplate.firstElementChild.cloneNode(true);  // Clone template
-                // ===============================
-                // CSS CLASSES FOR MESSAGE TYPE
-                // ===============================
-                // Distinguish between agent and user messages for styling
+                msgDiv = nfCloneTemplate(msgTemplate.firstElementChild, 'div');
+                window.nfLogger.debug('Cloned msgDiv', { msgDiv });
                 msgDiv.className = 'nf-ticketdetail-message ' + 
                     (article.sender_id === 1 ? 'nf-ticketdetail-message--agent' : 'nf-ticketdetail-message--user');
-                // ===============================
-                // FILL MESSAGE HEADER
-                // ===============================
-                msgDiv.querySelector('.nf-ticketdetail-message-header').textContent = 
-                    `${article.from || (article.sender_id === 1 ? 'Support' : 'You')} • ${new Date(article.created_at).toLocaleString('en-US')}`;
-                // ===============================
-                // EMAIL CONTENT CLEANUP
-                // ===============================
-                // Clean up email content for better readability in user emails
+                const msgHeader = msgDiv.querySelector('.nf-ticketdetail-message-header');
+                if (msgHeader) {
+                    msgHeader.textContent = `${article.from || (article.sender_id === 1 ? 'Support' : 'You')} • ${new Date(article.created_at).toLocaleString(window.nfLang.getCurrentLocale())}`;
+                } else {
+                    window.nfLogger.error('Message header element missing', { msgDiv });
+                }
                 const isUserEmail = article.type === 'email' && article.sender === 'Customer';
                 let bodyContent = isUserEmail ? nfExtractEmailContent(article.body, true) : (article.body || '');
-                // Clean HTML from unwanted inline styles (e.g. from rich text editor)
                 if (typeof NFUtils !== 'undefined' && NFUtils.cleanHtml) {
                     bodyContent = NFUtils.cleanHtml(bodyContent);
                 }
-                // ===============================
-                // SET MESSAGE BODY
-                // ===============================
-                msgDiv.querySelector('.nf-ticketdetail-message-body').innerHTML = bodyContent;
-                // ===============================
-                // RENDER ATTACHMENTS (IF ANY)
-                // ===============================
+                const msgBody = msgDiv.querySelector('.nf-ticketdetail-message-body');
+                if (msgBody) {
+                    msgBody.innerHTML = bodyContent;
+                } else {
+                    window.nfLogger.error('Message body element missing', { msgDiv });
+                }
                 const attDiv = msgDiv.querySelector('.nf-ticketdetail-attachments');
                 if (article.attachments && article.attachments.length > 0 && attDiv) {
-                    nfRenderAttachments(article.attachments, attDiv);  // Render file attachments
+                    window.nfLogger.debug('Rendering attachments', { attachments: article.attachments });
+                    nfRenderAttachments(article.attachments, attDiv);
                 }
-            } else {
-                // ===============================
-                // FALLBACK: PROGRAMMATIC CREATION
-                // ===============================
-                msgDiv = nfCreateMessageDiv(article);  // Create message without template
             }
-            // ===============================
-            // ADD MESSAGE TO CONTAINER
-            // ===============================
+            window.nfLogger.debug('Appending msgDiv to ticketDetailMessages', { msgDiv });
             nf.ticketDetailMessages.appendChild(msgDiv);
         });
         
@@ -284,208 +266,6 @@ async function nfShowTicketDetailView(ticketId) {
 
 // ===============================
 // MESSAGE DISPLAY HELPER FUNCTIONS
-// ===============================
-
-/**
- * Creates a message div without a template (fallback function)
- * Used if no HTML template for messages is available
- * 
- * @param {Object} article - Article object from Zammad API
- * @returns {HTMLElement} Fully configured message element
- */
-function nfCreateMessageDiv(article) {
-    // ===============================
-    // CREATE MESSAGE CONTAINER
-    // ===============================
-    const msgDiv = document.createElement('div');
-    msgDiv.className = 'nf-ticketdetail-message ' + 
-        (article.sender_id === 1 ? 'nf-ticketdetail-message--agent' : 'nf-ticketdetail-message--user');
-    
-    // ===============================
-    // CREATE MESSAGE HEADER
-    // ===============================
-    const header = document.createElement('div');
-    header.className = 'nf-ticketdetail-message-header';
-    header.style.fontWeight = '600';      // Bold header
-    header.style.marginBottom = '0.3rem'; // Space below header
-    header.textContent = `${article.from || (article.sender_id === 1 ? 'Support' : 'You')} • ${new Date(article.created_at).toLocaleString('en-US')}`;
-    msgDiv.appendChild(header);
-    
-    // ===============================
-    // CREATE MESSAGE BODY
-    // ===============================
-    const body = document.createElement('div');
-    body.className = 'nf-ticketdetail-message-body';
-    
-    // ===============================
-    // CLEANUP CONTENT FOR EMAILS
-    // ===============================
-    // Clean up email content for better readability in user emails
-    const isUserEmail = article.type === 'email' && article.sender === 'Customer';
-    let bodyContent = isUserEmail ? nfExtractEmailContent(article.body, true) : (article.body || '');
-    
-    // Clean HTML from unwanted inline styles (e.g. from rich text editor)
-    if (typeof NFUtils !== 'undefined' && NFUtils.cleanHtml) {
-        bodyContent = NFUtils.cleanHtml(bodyContent);
-    }
-    
-    body.innerHTML = bodyContent;  // Set cleaned content
-    msgDiv.appendChild(body);
-    
-    // ===============================
-    // ADD ATTACHMENTS (IF ANY)
-    // ===============================
-    if (article.attachments && article.attachments.length > 0) {
-        const attDiv = document.createElement('div');
-        attDiv.className = 'nf-ticketdetail-attachments';
-        nfRenderAttachments(article.attachments, attDiv);  // Render attachments
-        msgDiv.appendChild(attDiv);
-    }
-    
-    return msgDiv;  // Return complete message
-}
-
-// ===============================
-// ATTACHMENT RENDERING AND DISPLAY
-// ===============================
-
-/**
- * Renders file attachments for messages with image preview and download links
- * Distinguishes between images (preview) and other files (download links)
- * 
- * @param {Array} attachments - Array of attachment objects from Zammad API
- * @param {HTMLElement} attDiv - Container element for attachments
- */
-function nfRenderAttachments(attachments, attDiv) {
-    attachments.forEach(att => {
-        // ===============================
-        // DETERMINE FILE TYPE
-        // ===============================
-        // Debug output for troubleshooting
-        console.log('Attachment analyzed:', {
-            filename: att.filename,
-            contentType: att.preferences?.['Content-Type'],
-            preferences: att.preferences
-        });
-        
-        // Check if attachment is an image based on MIME type
-        let isImage = att.preferences && att.preferences['Content-Type'] && 
-                     att.preferences['Content-Type'].startsWith('image/');
-        
-        // Fallback: also check file extension if MIME type is not available or incorrect
-        if (!isImage && att.filename) {
-            const filenameLower = att.filename.toLowerCase();
-            const imageExtensions = window.NF_CONFIG?.security?.imageExtensions || ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
-            isImage = imageExtensions.some(ext => filenameLower.endsWith(ext));
-            
-            if (isImage) {
-                console.log('Image detected by file extension:', att.filename);
-            }
-        }
-        
-        console.log('Is image?', isImage, 'for', att.filename);
-        const baseUrl = window.NF_CONFIG?.api?.baseUrl;
-        const url = `${baseUrl}/attachments/${att.id}`;  // Zammad API URL for attachment
-        
-        if (isImage) {
-            // ===============================
-            // IMAGE ATTACHMENT HANDLING
-            // ===============================
-            const img = document.createElement('img');
-            img.alt = att.filename;                    // Alt text for accessibility
-            img.className = 'nf-ticketdetail-thumb';   // CSS class for thumbnail styling
-            img.title = att.filename;                  // Tooltip with filename
-            
-            // Store the original attachment URL as data attribute for gallery access
-            img.dataset.attachmentUrl = url;
-            img.dataset.attachmentName = att.filename;
-            
-            // ===============================
-            // SECURE IMAGE DOWNLOAD WITH AUTHENTICATION
-            // ===============================
-            fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Basic ${nf.userToken}`  // Use stored credentials
-                }
-            })
-            .then(async response => {
-                // ===============================
-                // RESPONSE VALIDATION
-                // ===============================
-                if (!response.ok) throw new Error('Image not loadable');
-                const blob = await response.blob();                           // Load image as blob
-                if (!blob.type.startsWith('image/')) throw new Error('Not an image');  // Double MIME type check
-                
-                // ===============================
-                // CONVERT BLOB TO DATA-URL
-                // ===============================
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    img.src = e.target.result;  // Set image source to data URL for local display
-                };
-                reader.readAsDataURL(blob);
-            })
-            .catch(() => {
-                // ===============================
-                // FALLBACK: DOWNLOAD LINK IF IMAGE FAILS
-                // ===============================
-                // If image cannot be loaded, show download link as alternative
-                const link = document.createElement('a');
-                link.href = url;                                     // Direct URL to attachment
-                link.target = '_blank';                              // Open in new tab
-                link.rel = 'noopener noreferrer';                    // Security attributes
-                link.textContent = att.filename;                     // Show filename as link text
-                link.className = 'nf-ticketdetail-attachmentlink';   // CSS class for styling
-                attDiv.appendChild(link);                            // Add link to container
-            });
-            
-            // ===============================
-            // CLICK HANDLER FOR IMAGE GALLERY VIEW
-            // ===============================
-            img.addEventListener('click', async (e) => {
-                e.preventDefault();        // Prevent default browser behavior
-                e.stopPropagation();      // Prevent event bubbling
-                
-                // Use the stored original attachment URL for the gallery
-                const attachmentUrl = img.dataset.attachmentUrl;
-                
-                // Collect all image attachments from the current message
-                const messageImages = [];
-                attachments.forEach(att => {
-                    const isImageAtt = att.preferences && att.preferences['Content-Type'] && 
-                                      att.preferences['Content-Type'].startsWith('image/');
-                    if (isImageAtt) {
-                        messageImages.push({
-                            url: `${window.NF_CONFIG?.api?.baseUrl}/attachments/${att.id}`,
-                            name: att.filename,
-                            mimeType: att.preferences['Content-Type']
-                        });
-                    }
-                });
-                
-                // Open gallery directly without nfIsImageFile check
-                await nfOpenGalleryForAttachment(attachmentUrl, messageImages);
-            });
-            attDiv.appendChild(img);                         // Add image thumbnail to container
-        } else {
-            // ===============================
-            // NON-IMAGE ATTACHMENT HANDLING
-            // ===============================
-            // Create download link for all other file types (PDFs, documents, etc.)
-            const link = document.createElement('a');
-            link.href = url;                                     // Direct URL to attachment download
-            link.target = '_blank';                              // Open in new tab
-            link.rel = 'noopener noreferrer';                    // Security attributes for external links
-            link.textContent = att.filename;                     // Show filename as link text
-            link.className = 'nf-ticketdetail-attachmentlink';   // CSS class for consistent styling
-            attDiv.appendChild(link);                            // Add download link to container
-        }
-    });
-}
-
-// ===============================
-// EMAIL CONTENT CLEANUP AND EXTRACTION
 // ===============================
 
 /**
@@ -590,7 +370,7 @@ function nfExtractEmailContent(body, isUserEmail = false) {
     // EMAIL SEPARATORS AND MARKERS
     // ===============================
     // Get email separators for further cleanup from config, or use default English set
-    const separators = window.NF_CONFIG?.system?.emailSeparators || [
+    const separators = NF_CONFIG?.system?.emailSeparators || [
         'From:',          // English email header
         'Sent:',
         'To:',
@@ -633,13 +413,13 @@ async function nfFetchUserNameById(userId) {
     // ===============================
     // API REQUEST CONFIGURATION
     // ===============================
-    // Construct URL for Zammad User API (adjust domain as needed)
-    const url = `${window.NF_CONFIG?.api?.baseUrl}/users/${userId}`;
+    // Construct URL for Zammad User API
+    const url = `${NF_CONFIG?.api?.baseUrl}/users/${userId}`;
     
     // ===============================
     // AUTHENTICATED API CALL
     // ===============================
-    const response = await fetch(url, {
+    const response = await nfApiGet(url, {
         headers: {
             'Authorization': `Basic ${nf.userToken}`  // Use stored authentication
         }
@@ -660,3 +440,170 @@ async function nfFetchUserNameById(userId) {
         `${data.firstname} ${data.lastname}` :      // Full name if available
         data.login || 'Unknown';                    // Fallback: login name or "Unknown"
 }
+
+// ===============================
+// ATTACHMENT RENDERING
+// ===============================
+
+/**
+ * Renders attachments for a ticket message
+ * Creates thumbnails for images that open in gallery, and links for other files
+ * @param {Array} attachments - Array of attachment objects
+ * @param {HTMLElement} container - Container element to render attachments in
+ */
+function nfRenderAttachments(attachments, container) {
+    window.nfLogger.debug('nfRenderAttachments called', { attachments, container });
+    
+    if (!attachments || !attachments.length || !container) {
+        window.nfLogger.debug('No attachments or container missing');
+        return;
+    }
+    
+    // Debug: Log attachment structure to understand Zammad API response
+    window.nfLogger.debug('Attachment structure analysis', { 
+        firstAttachment: attachments[0],
+        attachmentKeys: attachments[0] ? Object.keys(attachments[0]) : []
+    });
+    
+    container.innerHTML = ''; // Clear existing content
+    
+    // Collect all image attachments for gallery navigation
+    const allImages = attachments
+        .filter(attachment => {
+            // Build proper URL if not present
+            const attachmentUrl = nfBuildAttachmentUrl(attachment);
+            return nfIsImageFile(attachmentUrl || attachment.filename);
+        })
+        .map(attachment => ({
+            url: nfBuildAttachmentUrl(attachment),
+            name: attachment.filename || 'Attachment'
+        }));
+    
+    attachments.forEach((attachment, index) => {
+        const attachDiv = document.createElement('div');
+        attachDiv.className = 'nf-attachment-item';
+        
+        // Build proper attachment URL
+        const attachmentUrl = nfBuildAttachmentUrl(attachment);
+        const isImage = nfIsImageFile(attachmentUrl || attachment.filename);
+        
+        window.nfLogger.debug('Processing attachment', { 
+            attachment, 
+            attachmentUrl, 
+            isImage, 
+            filename: attachment.filename 
+        });
+        
+        if (isImage) {
+            // Create thumbnail for images
+            const thumbImg = document.createElement('img');
+            thumbImg.className = 'nf-ticketdetail-thumb nf-attachment-thumbnail';
+            thumbImg.alt = attachment.filename || `Attachment ${index + 1}`;
+            thumbImg.style.maxWidth = '150px';
+            thumbImg.style.maxHeight = '150px';
+            thumbImg.style.cursor = 'pointer';
+            thumbImg.style.border = '1px solid #ddd';
+            thumbImg.style.borderRadius = '4px';
+            thumbImg.style.padding = '4px';
+            
+            // Load authenticated image for thumbnail
+            (async () => {
+                try {
+                    if (!attachmentUrl) {
+                        throw new Error('No attachment URL available');
+                    }
+                    const response = await fetch(attachmentUrl, {
+                        method: 'GET',
+                        headers: { 'Authorization': `Basic ${nf.userToken}` }
+                    });
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const dataUrl = URL.createObjectURL(blob);
+                        thumbImg.src = dataUrl;
+                    } else {
+                        // Fallback: show placeholder or hide
+                        thumbImg.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150"><rect width="150" height="150" fill="%23f0f0f0"/><text x="75" y="75" text-anchor="middle" fill="%23666">📎</text></svg>';
+                    }
+                } catch (error) {
+                    window.nfLogger.warn('Failed to load thumbnail', { error, attachment, attachmentUrl });
+                    // Show file icon placeholder
+                    thumbImg.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150"><rect width="150" height="150" fill="%23f0f0f0"/><text x="75" y="75" text-anchor="middle" fill="%23666">📎</text></svg>';
+                }
+            })();
+            
+            // Add click handler to open gallery
+            thumbImg.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.nfLogger.debug('Thumbnail clicked, opening gallery', { 
+                    imageUrl: attachmentUrl, 
+                    allImages 
+                });
+                nfOpenGalleryForAttachment(attachmentUrl, allImages);
+            });
+            
+            // Add filename below thumbnail
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'nf-attachment-name';
+            nameDiv.textContent = attachment.filename || `Image ${index + 1}`;
+            nameDiv.style.fontSize = '12px';
+            nameDiv.style.marginTop = '4px';
+            nameDiv.style.textAlign = 'center';
+            
+            // Add file size if available
+            if (attachment.size) {
+                const sizeSpan = document.createElement('span');
+                sizeSpan.className = 'nf-attachment-size';
+                sizeSpan.textContent = ` (${(attachment.size / 1024).toFixed(1)} KB)`;
+                sizeSpan.style.color = '#666';
+                nameDiv.appendChild(sizeSpan);
+            }
+            
+            attachDiv.appendChild(thumbImg);
+            attachDiv.appendChild(nameDiv);
+        } else {
+            // Create link for non-image files
+            const attachLink = document.createElement('a');
+            attachLink.href = attachmentUrl || '#';
+            attachLink.textContent = attachment.filename || `Attachment ${index + 1}`;
+            attachLink.target = '_blank';
+            attachLink.className = 'nf-attachment-link';
+            
+            // Add file size if available
+            if (attachment.size) {
+                const sizeSpan = document.createElement('span');
+                sizeSpan.className = 'nf-attachment-size';
+                sizeSpan.textContent = ` (${(attachment.size / 1024).toFixed(1)} KB)`;
+                attachLink.appendChild(sizeSpan);
+            }
+            
+            attachDiv.appendChild(attachLink);
+        }
+        
+        container.appendChild(attachDiv);
+    });
+}
+
+/**
+ * Builds the proper URL for a Zammad attachment
+ * @param {Object} attachment - Attachment object from Zammad API
+ * @returns {string} Complete URL to the attachment
+ */
+function nfBuildAttachmentUrl(attachment) {
+    // If URL is already present, use it
+    if (attachment.url) {
+        return attachment.url;
+    }
+    
+    // Build URL from Zammad API structure
+    // Zammad attachments typically have an 'id' property
+    if (attachment.id) {
+        const baseUrl = (NF_CONFIG && NF_CONFIG.api && NF_CONFIG.api.baseUrl) || '';
+        return `${baseUrl}/attachments/${attachment.id}`;
+    }
+    
+    // Log if no URL can be constructed
+    window.nfLogger.warn('Could not build attachment URL', { attachment });
+    return null;
+}
+
+export { nfShowTicketDetailView };

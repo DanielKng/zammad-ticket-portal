@@ -6,6 +6,13 @@
 // It handles the reply interface, closing tickets, sending replies,
 // and managing the reply box.
 
+import { nf } from './nf-dom.js';
+import { nfSetLoading } from './nf-helpers.js';
+import { nfShowStatus } from './nf-status.js';
+import { nfShowTicketList } from './nf-ui.js';
+import { nfSendReply, nfCloseTicket } from './nf-api.js';
+import { nfShowTicketDetailView } from './nf-ticket-detail.js';
+
 // ===============================
 // REPLY INTERFACE SETUP AND MANAGEMENT
 // ===============================
@@ -19,16 +26,6 @@ function nfSetupReplyInterface() {
     // REPLY TOGGLE BUTTON SETUP
     // ===============================
     let replyToggle = document.getElementById('nf_ticketdetail_replytoggle');
-    
-    // Create toggle button if not present
-    if (!replyToggle) {
-        replyToggle = document.createElement('button');
-        replyToggle.id = 'nf_ticketdetail_replytoggle';               // Unique ID for later reference
-        replyToggle.className = 'nf-ticketdetail-replytoggle';        // CSS class for styling
-        replyToggle.textContent = NF_CONFIG.getLabels(NF_CONFIG.currentLanguage).ticketDetailActions.reply;
-        // Insert button before the reply box in the container
-        nf.ticketDetailContainer.insertBefore(replyToggle, nf.ticketDetailReplyBox);
-    }
     
     // ===============================
     // INITIAL STATE
@@ -84,10 +81,10 @@ async function nfHandleReplySend() {
         // CACHE INVALIDATION
         // ===============================
         // Invalidate cache for this ticket so the new reply is visible on reload
-        if (typeof nfCache !== 'undefined') {
-            nfCache.invalidate(`ticket_detail_${ticketId}`);
-            if (typeof nfLogger !== 'undefined') {
-                nfLogger.debug('Ticket detail cache invalidated after reply', { ticketId });
+        if (typeof window.nfCache !== 'undefined') {
+            window.nfCache.invalidate(`ticket_detail_${ticketId}`);
+            if (typeof window.nfLogger !== 'undefined') {
+                window.nfLogger.debug('Ticket detail cache invalidated after reply', { ticketId });
             }
         }
         // ===============================
@@ -163,12 +160,11 @@ async function nfHandleCloseTicket() {
         // ===============================
         // CACHE INVALIDATION
         // ===============================
-        // Invalidate both ticket details and ticket list
-        if (typeof nfCache !== 'undefined') {
-            nfCache.invalidate(`ticket_detail_${ticketId}`);
-            nfCache.invalidate(`tickets_${nf.userId}`);
-            if (typeof nfLogger !== 'undefined') {
-                nfLogger.debug('Cache invalidated after ticket close', { ticketId });
+        // Invalidate ticket details cache (lists are not cached)
+        if (typeof window.nfCache !== 'undefined') {
+            window.nfCache.invalidate(`ticket_detail_${ticketId}`);
+            if (typeof window.nfLogger !== 'undefined') {
+                window.nfLogger.debug('Ticket detail cache invalidated after ticket close', { ticketId });
             }
         }
         // ===============================
@@ -188,3 +184,5 @@ async function nfHandleCloseTicket() {
         nfSetLoading(false);
     }
 }
+
+export { nfHandleCloseTicket, nfSetupReplyInterface };

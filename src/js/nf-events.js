@@ -6,6 +6,16 @@
 // and initializes the complete event system after DOM load.
 // It extends the global nf object with event handling methods.
 
+import { nf } from './nf-dom.js';
+import { handleNewTicketSubmit } from './nf-ticket-create.js';
+import { nfShowStatus } from './nf-status.js';
+import { nfUpdateFilePreview, nfClearFilePreview, nfInitializeDragAndDrop } from './nf-file-upload.js';
+import nfModal from './nf-modal.js';
+import { nfShowStart, nfRequireLogin, nfShowTicketList, nfShowNewTicket, nfHideAll, nfResetLoginState } from './nf-ui.js';
+import { nfHideSearchDropdown, nfInitializeSearch } from './nf-search.js';
+import { nfLoadAndShowTicketList } from './nf-ticket-list.js';
+import { nfHandleCloseTicket } from './nf-ticket-actions.js';
+
 // ===============================
 // EXTENDED EVENT HANDLERS FOR THE NF OBJECT
 // ===============================
@@ -19,14 +29,9 @@ Object.assign(nf, {
     handleModalClose: function(e) {
         if (e.target.classList.contains('nf-modal-closebtn')) {
             e.preventDefault();
-            // ===============================
-            // MODAL CONTAINER IDENTIFICATION
-            // ===============================
             const modal = e.target.closest('.nf-ticketdetail-container, .nf-ticketlist-container, .nf-newticket-container, .nf-login-container, .nf-modal-centerbox');
             if (!modal) return;
-            // ===============================
-            // MODAL-SPECIFIC NAVIGATION
-            // ===============================
+            nfModal.close(modal);
             if (modal.classList.contains('nf-ticketdetail-container')) {
                 nfShowTicketList();
             } else if (modal.classList.contains('nf-ticketlist-container')) {
@@ -41,25 +46,50 @@ Object.assign(nf, {
             }
         }
     },
+
+    /**
+     * Handles keyboard accessibility for modal close buttons
+     * Enables Enter and Space keys to trigger close button functionality
+     *
+     * @param {KeyboardEvent} e - Keyboard event
+     */
+    handleModalCloseKeyboard: function(e) {
+        if (e.target.classList.contains('nf-modal-closebtn') && 
+            (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            e.target.click(); // Trigger the click event which will be handled by handleModalClose
+        }
+    },
     /**
      * Handles ESC key for intuitive modal navigation
      * ESC always closes the currently visible modal and navigates one level back
+     * Priority: Gallery > Search > Form Fields > Modals (ticket detail > ticket list > main)
      *
      * @param {KeyboardEvent} e - Keyboard event
      */
     handleEscKey: function(e) {
         if (e.key === 'Escape') {
-            // Check gallery first
+            // Prevent default and stop propagation to avoid multiple handlers
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Priority 1: Gallery overlay (highest priority)
             const galleryOverlay = document.getElementById('nf_gallery_overlay');
-            if (galleryOverlay && !galleryOverlay.classList.contains('nf-hidden')) {
-                return;
+            if (galleryOverlay && galleryOverlay.classList.contains('nf-gallery-active')) {
+                // Import and call gallery close function
+                if (window.nfCloseGallery) {
+                    window.nfCloseGallery();
+                }
+                return; // Stop here, don't close anything else
             }
-            // Check search dropdown
+            
+            // Priority 2: Search dropdown
             if (nf.searchDropdown && nf.searchDropdown.style.display === 'block') {
                 nfHideSearchDropdown();
                 return;
             }
-            // Check ticketlist filter/sort dropdowns
+            
+            // Priority 3: Form field focus (blur active form elements)
             if (nf.filterStatus && nf.filterStatus === document.activeElement) {
                 nf.filterStatus.blur();
                 return;
@@ -68,19 +98,40 @@ Object.assign(nf, {
                 nf.sort.blur();
                 return;
             }
-            // Check modal hierarchy (only close the currently visible modal)
-            if (nf.ticketDetailContainer && !nf.ticketDetailContainer.classList.contains('nf-hidden')) {
+            
+            // Priority 4: Modal navigation (ticket detail > ticket list > main)
+            // Check visibility using both nf-hidden class and computed style
+            if (nf.ticketDetailContainer && 
+                !nf.ticketDetailContainer.classList.contains('nf-hidden') &&
+                window.getComputedStyle(nf.ticketDetailContainer).display !== 'none') {
+                nfModal.close(nf.ticketDetailContainer);
                 nfShowTicketList();
-            } else if (nf.ticketListContainer && !nf.ticketListContainer.classList.contains('nf-hidden')) {
+                return; // Stop here
+            }
+            
+            if (nf.ticketListContainer && 
+                !nf.ticketListContainer.classList.contains('nf-hidden') &&
+                window.getComputedStyle(nf.ticketListContainer).display !== 'none') {
+                nfModal.close(nf.ticketListContainer);
                 nfShowStart();
-            } else if (nf.newTicketContainer && !nf.newTicketContainer.classList.contains('nf-hidden')) {
+                return; // Stop here
+            }
+            
+            if (nf.newTicketContainer && 
+                !nf.newTicketContainer.classList.contains('nf-hidden') &&
+                window.getComputedStyle(nf.newTicketContainer).display !== 'none') {
+                nfModal.close(nf.newTicketContainer);
                 nfShowStart();
-            } else if (nf.loginContainer && !nf.loginContainer.classList.contains('nf-hidden')) {
+                return; // Stop here
+            }
+            
+            if (nf.loginContainer && 
+                !nf.loginContainer.classList.contains('nf-hidden') &&
+                window.getComputedStyle(nf.loginContainer).display !== 'none') {
+                nfModal.close(nf.loginContainer);
                 nfResetLoginState();
                 nfShowStart();
-            } else if (nf.start && !nf.start.classList.contains('nf-hidden')) {
-                // Main menu open: do not automatically close everything!
-                // nfHideAll();
+                return; // Stop here
             }
         }
     },
@@ -102,66 +153,7 @@ Object.assign(nf, {
      *
      * @param {Event} e - Submit event from the form
      */
-    handleNewTicketSubmit: async function(e) {
-        e.preventDefault();
-        nfSetLoading(true);
-        try {
-            // ===============================
-            // COLLECT FORM DATA
-            // ===============================
-            const subject = nf.newTicketSubject.value.trim();
-            const body = nf.newTicketBody.value.trim();
-            const files = nf.newTicketAttachment.files;
-            // ===============================
-            // REQUIRED FIELD VALIDATION
-            // ===============================
-            if (!subject || !body) {
-                throw new NFError(nfGetMessage('missingFields'), 'MISSING_FIELDS');
-            }
-            // ===============================
-            // FILE VALIDATION
-            // ===============================
-            if (files && files.length > 0) {
-                for (const file of files) {
-                    try {
-                        NFUtils.validateFile(file);
-                    } catch (error) {
-                        throw new NFError(nfGetMessage('fileValidationFailed', undefined, { file: file.name, error: error.message }), 'FILE_VALIDATION_FAILED');
-                    }
-                }
-            }
-            nfLogger.info('Creating ticket', { subject, hasFiles: files.length > 0 });
-            // ===============================
-            // API CALL TO CREATE TICKET
-            // ===============================
-            await nfCreateTicket(subject, body, files);
-            nfShowStatus(nfGetMessage('ticketCreated'), 'success', 'newticket');
-            // ===============================
-            // CACHE INVALIDATION
-            // ===============================
-            nfCache.invalidate(`tickets_${nf.userId}`);
-            // ===============================
-            // RESET FORM
-            // ===============================
-            nf.newTicketForm.reset();
-            nfClearFilePreview();
-            // ===============================
-            // NAVIGATION AFTER SUCCESS
-            // ===============================
-            nfShowStart();
-        } catch (error) {
-            // ===============================
-            // ERROR HANDLING
-            // ===============================
-            nfLogger.error('Failed to create ticket', { error: error.message });
-            nfShowStatus(error.message || 'Error creating ticket', 'error', 'newticket');
-        } finally {
-            // ===============================
-            // CLEANUP
-            // ===============================
-            nfSetLoading(false);
-        }
-    }
+    handleNewTicketSubmit: handleNewTicketSubmit,
 });
 // ===============================
 // EVENT LISTENER INITIALIZATION
@@ -176,19 +168,25 @@ function nfInitializeEventListeners() {
     // MAIN TRIGGER (Open system)
     // ===============================
     if (nf.trigger) {
-        nf.trigger.addEventListener('click', nfShowStart);
+        nf.trigger.addEventListener('click', () => {
+            window.nfLogger.debug('Main trigger button clicked - opening ticket system');
+            nfShowStart();
+        });
     }
     // ===============================
     // MAIN MENU BUTTONS
     // ===============================
     if (nf.btnTicketCreate) {
         nf.btnTicketCreate.addEventListener('click', () => {
+            window.nfLogger.debug('Create ticket button clicked');
             nfRequireLogin(nfShowNewTicket);
         });
     }
     if (nf.btnTicketView) {
         nf.btnTicketView.addEventListener('click', async () => {
+            window.nfLogger.debug('View tickets button clicked');
             nfRequireLogin(async () => {
+                window.nfLogger.debug('nfRequireLogin callback for btnTicketView starting');
                 await nfLoadAndShowTicketList();
             });
         });
@@ -215,6 +213,7 @@ function nfInitializeEventListeners() {
     // GLOBAL EVENT DELEGATION
     document.addEventListener('click', nf.handleModalClose);
     document.addEventListener('keydown', nf.handleEscKey);
+    document.addEventListener('keydown', nf.handleModalCloseKeyboard); // Accessibility for close buttons
     // SEARCH FUNCTIONALITY
     nfInitializeSearch();
 }
@@ -226,5 +225,7 @@ function nfInitializeEventListeners() {
  * Starts the complete event system when DOM is fully loaded
  */
 document.addEventListener('DOMContentLoaded', function() {
+    window.nfLogger.debug('DOM loaded - initializing event listeners and application');
     nfInitializeEventListeners();
+    window.nfLogger.debug('Event listeners initialized - application ready');
 });
