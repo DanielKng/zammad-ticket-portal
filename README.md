@@ -56,7 +56,7 @@ This repository follows GitHub best practices with comprehensive documentation a
 
 **This project uses ES6 modules and requires a web server** - it cannot be opened directly by double-clicking the HTML file.
 
-> **Need the legacy version?** Check the `legacy` branch for a version that opens directly in browsers. Same functionality, but this modern version provides cleaner, more maintainable code.
+> **Need the legacy version?** Check the [`legacy`](https://github.com/DanielKng/zd-ticket-portal/tree/legacy) branch for a version that opens directly in browsers. Same functionality, but this modern version provides cleaner, more maintainable code.
 
 To run the project locally for testing:
 
