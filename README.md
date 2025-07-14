@@ -42,9 +42,9 @@ This project provides a clean, modal-based interface for Zammad ticket systems t
 - Smart caching for better performance
 - File upload with drag-and-drop support
 
-### Professional Project Structure
+### GitHub Project Structure
 
-This repository follows GitHub best practices with comprehensive documentation and templates:
+This repository follows GitHub's best practices with comprehensive documentation and templates:
 
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Detailed contribution guidelines and development setup
 - **[SECURITY.md](SECURITY.md)** - Security policy and vulnerability reporting process
@@ -88,7 +88,7 @@ Since you'll be integrating this into your website anyway, you can upload the fi
 - Improved date localization with proper locale detection
 - Centralized language configuration in `nf-config.js`
 - Enhanced event system with consolidated keyboard accessibility handling
-
+- General fixes that needed to be done because I decided to use ES6...
 ---
 
 ## Quick Setup
@@ -99,7 +99,7 @@ Since you'll be integrating this into your website anyway, you can upload the fi
 2. Place the contents of `src/html/nf_gui.html` in a new Contao article
 3. Adjust file paths to match your server structure
 4. Remove `<meta charset="utf-8">` for Contao compatibility
-5. **Important:** Must be served via HTTP - ES modules require a web server
+5. **Important:** Must be served via HTTP/HTTPS - ES modules require a web server
 
 ### Other CMS Systems
 
@@ -283,9 +283,10 @@ debug: {
 - Configurable Language Paths - All file locations now configurable
 - Improved Date Localization - Consistent locale-based formatting
 - Enhanced Event System - Consolidated keyboard accessibility handling
+- Finished ES Module Architecture
 
 **July 9, 2025**
-- ES Module Architecture - Refactored all JavaScript to use modern imports/exports
+- Moving towards an ES Module Architecture - Refactored (almost) all JavaScript to use modern imports/exports
 - Centralized Modal System - Unified handling for all popup interactions
 - Enhanced UX Design - Improved modal effects and user interactions
 - Modern Browser Requirements - Updated for current web standards
@@ -298,10 +299,9 @@ debug: {
 - Enhanced Login Experience - Credential hints and contextual error messages
 - Configurable TTL Values - Descriptive cache naming for different content types
 
-**Early 2025** *(Foundation & Core Features)*
-- Initial ES6 Module Implementation - Modern JavaScript architecture
+**Early July 2025** *(Foundation & Core Features)*
 - Zammad API Integration - Complete ticket lifecycle management
-- Multi-language Support - German and English with extensible framework
+- Multi-language Support - German and English with extensible framework (it was all in one file...)
 - Responsive Modal Design - Background blur and layered modal system
 - File Upload System - Drag-and-drop with preview functionality
 - Gallery Integration - Image viewing for ticket attachments
@@ -312,11 +312,11 @@ debug: {
 
 ## Contributing
 
-We welcome contributions from the community! This project follows GitHub best practices with comprehensive templates and guidelines.
+I welcome contributions from the community! This project follows GitHub best practices with comprehensive templates and guidelines.
 
 ### Getting Started
 
-Please read our [Contributing Guidelines](CONTRIBUTING.md) for detailed information about:
+Please read my [Contributing Guidelines](CONTRIBUTING.md) for detailed information about:
 - Development setup and prerequisites
 - Code style and conventions
 - Testing requirements
@@ -324,12 +324,12 @@ Please read our [Contributing Guidelines](CONTRIBUTING.md) for detailed informat
 
 ### Reporting Issues
 
-- **Bug Reports**: Use our [Bug Report Template](.github/ISSUE_TEMPLATE/bug_report.md)
-- **Feature Requests**: Use our [Feature Request Template](.github/ISSUE_TEMPLATE/feature_request.md)
+- **Bug Reports**: Use my [Bug Report Template](.github/ISSUE_TEMPLATE/bug_report.md)
+- **Feature Requests**: Use my [Feature Request Template](.github/ISSUE_TEMPLATE/feature_request.md)
 
 ### Security
 
-For security-related issues, please review our [Security Policy](SECURITY.md) and follow the responsible disclosure process outlined there.
+For security-related issues, please review my [Security Policy](SECURITY.md) and follow the responsible disclosure process outlined there.
 
 ### Development Guidelines
 
