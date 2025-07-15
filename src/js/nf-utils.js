@@ -6,6 +6,8 @@
 // error handling, localStorage wrapper, file validation, and other
 // utility functions used across the project.
 
+import { isAllowedStyle, hasProblematicColor } from './nf-helpers.js';
+
 // ===============================
 // LOGGER SYSTEM FOR DEBUGGING AND MONITORING
 // ===============================
@@ -380,14 +382,6 @@ function nfGetMessage(key, placeholders = {}) {
     return window.nfLang.getMessage(key, placeholders);
 }
 window.nfGetMessage = nfGetMessage;
-
-function isAllowedStyle(style, allowedStyles) {
-    return allowedStyles.some(allowed => style.trim().startsWith(allowed));
-}
-
-function hasProblematicColor(style, problematicColors) {
-    return problematicColors.some(color => style.includes(color));
-}
 
 // ===============================
 // LOGGER REINITIALIZATION FUNCTION

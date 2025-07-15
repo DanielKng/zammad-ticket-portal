@@ -63,7 +63,7 @@ function nfShowStart() {
  * Implements layered modal system with blur effect
  */
 function nfShowTicketList() {
-    console.log('[DEBUG] nfShowTicketList called');
+    window.nfLogger.debug('nfShowTicketList called');
     
     // Show/hide elements first
     nfShow(nf.start);                 // Show main menu in background

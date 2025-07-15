@@ -28,7 +28,7 @@ import { nfIsImageFile, nfOpenGalleryForAttachment } from './nf-gallery.js';
  * @param {number} ticketId - ID of the ticket to display
  */
 async function nfShowTicketDetailView(ticketId) {
-    console.log('nfShowTicketDetailView called', ticketId);
+    window.nfLogger.debug('nfShowTicketDetailView called', { ticketId });
     try {
         nfSetLoading(true);  // Show loading spinner during API calls
         window.nfLogger.debug('nfShowTicketDetailView: ticketId', { ticketId });
@@ -126,7 +126,7 @@ async function nfShowTicketDetailView(ticketId) {
         window.nfLogger.debug('Clearing ticketDetailMessages');
         nf.ticketDetailMessages.innerHTML = '';
         // Debug: msgTemplate
-        console.debug('[DEBUG] msgTemplate:', msgTemplate);
+        window.nfLogger.debug('msgTemplate:', { msgTemplate });
         // ===============================
         // ARTICLE FILTERING FOR USER VIEW
         // ===============================

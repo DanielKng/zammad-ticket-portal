@@ -40,9 +40,9 @@ async function nfLoadAndShowTicketList() {
     if (typeof nfLogger !== 'undefined') {
         nfLogger.debug(`Loading ${statusLabel} tickets...`);
     } else {
-        console.debug(`[DEBUG] Loading ${statusLabel} tickets...`);
+        window.nfLogger.debug(`Loading ${statusLabel} tickets...`);
     }
-    console.debug('[DEBUG] nfLoadAndShowTicketList called');
+    window.nfLogger.debug('nfLoadAndShowTicketList called');
     nfSetLoading(true);  // Show loading spinner during API call
     try {
         // ===============================
@@ -51,13 +51,13 @@ async function nfLoadAndShowTicketList() {
         if (!nfFiltersInitialized) {
             nfInitializeFilters();
             nfFiltersInitialized = true;
-            console.debug('[DEBUG] Filters initialized');
+            window.nfLogger.debug('Filters initialized');
         }
         // ===============================
         // LOAD TICKETS FROM SERVER (FILTERED)
         // ===============================
         const tickets = await nfFetchTicketsFiltered(nfCurrentFilters);
-        console.debug('[DEBUG] Tickets fetched in nfLoadAndShowTicketList:', tickets);
+        window.nfLogger.debug('Tickets fetched in nfLoadAndShowTicketList:', { tickets });
         // ===============================
         // DISPLAY TICKETS
         // ===============================
@@ -67,7 +67,7 @@ async function nfLoadAndShowTicketList() {
         // ===============================
         nfShowTicketList();  // Show the ticket list modal
     } catch (error) {
-        console.error('[DEBUG] Error in nfLoadAndShowTicketList:', error);
+        window.nfLogger.error('Error in nfLoadAndShowTicketList:', { error });
         nfShowStatus(window.nfLang.getUtilsMessage('ticketListLoadError') + error.message, 'error', 'ticketlist');
     } finally {
         // ===============================
@@ -165,7 +165,7 @@ function nfInitializeFilters() {
  */
 async function nfOnStatusFilterChange(event) {
     const newStatusCategory = event.target.value;
-    console.debug('[DEBUG] Status filter changed:', newStatusCategory);
+    window.nfLogger.debug('Status filter changed:', { newStatusCategory });
     // Show/hide year filter depending on status category
     nfToggleYearFilter(newStatusCategory === 'closed');
     // Update filter and reload
@@ -177,7 +177,7 @@ async function nfOnStatusFilterChange(event) {
  * Event handler for sort filter changes
  */
 async function nfOnSortFilterChange(event) {
-    console.debug('[DEBUG] Sort filter changed:', event.target.value);
+    window.nfLogger.debug('Sort filter changed:', { value: event.target.value });
     nfCurrentFilters.sortOrder = event.target.value;
     await nfReloadTicketsWithFilters();
 }
@@ -186,7 +186,7 @@ async function nfOnSortFilterChange(event) {
  * Event handler for year filter changes
  */
 async function nfOnYearFilterChange(event) {
-    console.debug('[DEBUG] Year filter changed:', event.target.value);
+    window.nfLogger.debug('Year filter changed:', { value: event.target.value });
     nfCurrentFilters.year = parseInt(event.target.value);
     await nfReloadTicketsWithFilters();
 }
@@ -229,7 +229,7 @@ async function nfReloadTicketsWithFilters() {
     if (typeof nfLogger !== 'undefined') {
         nfLogger.debug(`Loading ${statusLabel} tickets...`);
     } else {
-        console.debug(`[DEBUG] Loading ${statusLabel} tickets...`);
+        window.nfLogger.debug(`Loading ${statusLabel} tickets...`);
     }
     nfSetLoading(true);
     try {
@@ -263,7 +263,7 @@ function nfStateLabel(state) {
  * Renders the ticket list into the table
  */
 function nfRenderTicketList(tickets) {
-    console.debug('[DEBUG] nfRenderTicketList called');
+    window.nfLogger.debug('nfRenderTicketList called');
     nf.ticketListBody.innerHTML = '';
     // ===============================
     // HANDLE EMPTY LIST
@@ -315,16 +315,16 @@ function nfRenderTicketList(tickets) {
                         }
                     }
                 } catch (e) {
-                    console.error('Error while filling ticket row:', e, t, tr);
+                    window.nfLogger.error('Error while filling ticket row:', { error: e, ticket: t, element: tr });
                 }
             } else {
                 // Log error and skip rendering this row
-                console.error('[TEMPLATE ERROR] Ticket row template <tr> not found. Skipping ticket row rendering.');
+                window.nfLogger.error('Ticket row template <tr> not found. Skipping ticket row rendering.');
                 return;
             }
         } else {
             // Log error and skip rendering this row
-            console.error('[TEMPLATE ERROR] Ticket row template not found. Skipping ticket row rendering.');
+            window.nfLogger.error('Ticket row template not found. Skipping ticket row rendering.');
             return;
         }
         // ===============================
@@ -334,11 +334,11 @@ function nfRenderTicketList(tickets) {
         tr.addEventListener('click', async (event) => {
             // Check if the click is on a link element (to prevent double handling)
             if (event.target.closest('.nf-ticketlist-link')) {
-                console.debug('[DEBUG] Click intercepted by link handler, skipping row handler');
+                window.nfLogger.debug('Click intercepted by link handler, skipping row handler');
                 return;
             }
             
-            console.debug('[DEBUG] Ticket row clicked', t.id, { event });
+            window.nfLogger.debug('Ticket row clicked', { ticketId: t.id, event });
             nf.ticketDetailContainer.setAttribute('data-ticket-id', t.id);  // Store internal ticket ID
             await nfShowTicketDetailView(t.id); // Load and render content
             nfShowTicketDetail();               // Show the modal and manage blur
@@ -347,7 +347,7 @@ function nfRenderTicketList(tickets) {
         const subjectLink = tr.querySelector('.nf-ticketlist-link');
         if (subjectLink) {
             subjectLink.addEventListener('click', async (event) => {
-                console.debug('[DEBUG] Ticket subject link clicked', t.id, { event });
+                window.nfLogger.debug('Ticket subject link clicked', { ticketId: t.id, event });
                 event.preventDefault(); // Prevent closing the modal
                 event.stopPropagation(); // Prevent row click from firing twice
                 nf.ticketDetailContainer.setAttribute('data-ticket-id', t.id);

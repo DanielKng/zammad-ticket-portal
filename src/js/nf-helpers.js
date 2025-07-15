@@ -29,6 +29,30 @@ function nfStateLabel(stateId) {
     return states[stateId] || window.nfLang.getLabel('unknownStatus');
 }
 
-export { nfShow, nfHide, nfSetLoading, nfStateLabel };
+// ===============================
+// HTML CLEANING HELPER FUNCTIONS
+// ===============================
+
+/**
+ * Checks if a CSS style property is allowed
+ * @param {string} style - CSS style property to check
+ * @param {Array} allowedStyles - Array of allowed style properties
+ * @returns {boolean} True if style is allowed
+ */
+function isAllowedStyle(style, allowedStyles) {
+    return allowedStyles.some(allowed => style.trim().startsWith(allowed));
+}
+
+/**
+ * Checks if a CSS style contains problematic colors
+ * @param {string} style - CSS style to check
+ * @param {Array} problematicColors - Array of problematic color values
+ * @returns {boolean} True if style contains problematic colors
+ */
+function hasProblematicColor(style, problematicColors) {
+    return problematicColors.some(color => style.includes(color));
+}
+
+export { nfShow, nfHide, nfSetLoading, nfStateLabel, isAllowedStyle, hasProblematicColor };
 // Status/message display logic moved to nf-status.js
 // File handling logic moved to nf-file-upload.js

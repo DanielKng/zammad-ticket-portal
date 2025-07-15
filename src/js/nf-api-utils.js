@@ -63,10 +63,3 @@ export function nfApiPut(url, body, options = {}, retries, timeout) {
         body: JSON.stringify(body)
     }, retries, timeout);
 }
-
-/**
- * Helper for DELETE requests
- */
-export function nfApiDelete(url, options = {}, retries, timeout) {
-    return nfApiFetch(url, { ...options, method: 'DELETE' }, retries, timeout);
-}
