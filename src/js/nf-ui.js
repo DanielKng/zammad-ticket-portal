@@ -2,7 +2,7 @@ import { NF_CONFIG } from './nf-config.js';
 import { nf } from './nf-dom.js';
 import { nfShow, nfHide } from './nf-helpers.js';
 import { nfSetLoading } from './nf-helpers.js';
-import { nfShowStatus, nfClearLoginStatus } from './nf-status.js';
+import { nfShowStatus, nfClearLoginStatus, nfShowPersistentLoginHint } from './nf-status.js';
 import { nfAuthenticateUser } from './nf-api.js';
 import nfModal from './nf-modal.js';
 
@@ -153,7 +153,7 @@ function showNormalLoginDisplay() {
     nf.loginSubmit.disabled = false;
     const credentialsHint = window.nfLang.getMessage('credentialsHint');
     if (credentialsHint) {
-        nfShowStatus(credentialsHint, 'info', 'login');
+        nfShowPersistentLoginHint(credentialsHint);
     }
 }
 

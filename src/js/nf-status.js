@@ -5,6 +5,17 @@ import { nfShow, nfHide } from './nf-helpers.js';
 // nf-status.js - Centralized status/message display logic
 // Author: Daniel Könning
 
+export function nfShowPersistentLoginHint(msg) {
+    // Hide all login status elements first except lockout (which should persist)
+    if (nf.loginWarning) nfHide(nf.loginWarning);
+    
+    if (nf.loginHint) {
+        nf.loginHint.textContent = msg;
+        nfShow(nf.loginHint);
+        // No timeout - this hint should persist
+    }
+}
+
 export function nfShowStatus(msg, type = 'success', targetModal = null) {
     const duration = NF_CONFIG.ui.statusMessageDuration;
     if (!targetModal) {
