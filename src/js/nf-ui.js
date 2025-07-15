@@ -29,6 +29,9 @@ function nfShowStart() {
     nfHide(nf.loginContainer);        // Hide login form
     nfHide(nf.newTicketContainer);    // Hide new ticket form
     
+    // Show the main start content
+    nfShow(nf.start);                 // Show main menu content
+    
     // Open the main overlay modal
     nfModal.open('nf_modal_overlay');
     
