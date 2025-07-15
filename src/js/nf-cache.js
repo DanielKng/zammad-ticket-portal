@@ -1,3 +1,5 @@
+import { NF_CONFIG } from './nf-config.js';
+
 // Author: Daniel Könning
 // ===============================
 // nf-cache.js - Local-storage cache with TTL for ticket frontend
@@ -13,23 +15,22 @@ class NFCache {
     constructor() {
         this.memory = new Map(); // Stores cached values
         this.timestamps = new Map(); // Stores expiry timestamps
-        // Use default TTL from config if available, else fallback to 5 minutes
-        this.defaultTTL = (window.NF_CONFIG && window.NF_CONFIG.ui && window.NF_CONFIG.ui.cache && window.NF_CONFIG.ui.cache.ticketListTTL)
-            ? window.NF_CONFIG.ui.cache.ticketListTTL
-            : 5 * 60 * 1000;
         this.localStoragePrefix = 'nfCache_';
     }
     /**
-     * Stores a value in the cache with an optional TTL.
+     * Stores a value in the cache with TTL.
      * @param {string} key - Unique cache key
      * @param {*} value - Value to cache
-     * @param {number} [ttl] - Time to live in ms (default: 5 min)
+     * @param {number} ttl - Time to live in ms (required)
      */
-    set(key, value, ttl = this.defaultTTL) {
+    set(key, value, ttl) {
+        if (!ttl || ttl <= 0) {
+            throw new Error('TTL must be provided and greater than 0');
+        }
         this.memory.set(key, value);
         this.timestamps.set(key, Date.now() + ttl);
-        // Persist to localStorage (ticket-related only)
-        if (key.startsWith('ticket')) {
+        // Persist to localStorage (ticket-related and search results)
+        if (key.startsWith('ticket') || key.startsWith('search_')) {
             const data = {
                 value,
                 expiry: Date.now() + ttl
@@ -40,6 +41,14 @@ class NFCache {
                 try {
                     localStorage.setItem(this.localStoragePrefix + key, JSON.stringify(data));
                 } catch (e) {}
+            }
+            // Debug logging for localStorage
+            if (typeof window !== 'undefined' && window.nfLogger) {
+                window.nfLogger.debug('Cache saved to localStorage', {
+                    key,
+                    ttlDays: Math.round(ttl / (24 * 60 * 60 * 1000)),
+                    expiryDate: new Date(Date.now() + ttl).toISOString()
+                });
             }
         }
     }
@@ -59,8 +68,8 @@ class NFCache {
                 return this.memory.get(key);
             }
         }
-        // Check localStorage (ticket-related only)
-        if (key.startsWith('ticket')) {
+        // Check localStorage (ticket-related and search results)
+        if (key.startsWith('ticket') || key.startsWith('search_')) {
             let data = null;
             if (typeof NFUtils !== 'undefined' && NFUtils.storage) {
                 data = NFUtils.storage.get(this.localStoragePrefix + key);
@@ -73,6 +82,17 @@ class NFCache {
                 // Restore to memory for faster access next time
                 this.memory.set(key, data.value);
                 this.timestamps.set(key, data.expiry);
+                // Debug logging for localStorage
+                if (typeof window !== 'undefined' && window.nfLogger) {
+                    const cacheType = key.startsWith('search_') ? 'search results' : 'ticket data';
+                    const cacheAgeMs = Date.now() - (data.value.cachedAt || 0);
+                    const cacheAgeDays = Math.round(cacheAgeMs / (24 * 60 * 60 * 1000));
+                    window.nfLogger.debug(`Cache loaded from localStorage (${cacheType})`, {
+                        key,
+                        cacheAgeDays,
+                        expiryDate: new Date(data.expiry).toISOString()
+                    });
+                }
                 return data.value;
             } else if (data) {
                 // Expired, clean up

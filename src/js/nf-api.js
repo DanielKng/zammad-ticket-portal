@@ -1,3 +1,6 @@
+import { nfApiFetch, nfApiGet, nfApiPost, nfApiPut, nfApiDelete } from './nf-api-utils.js';
+import { ZAMMAD_API_URL, nf } from './nf-dom.js';
+
 // Author: Daniel Könning
 // ===============================
 // nf-api.js - API communication and authentication with Zammad
@@ -20,7 +23,7 @@
  */
 async function nfAuthenticateUser(username, password) {
     // Performance measurement start (with fallback)
-    if (typeof nfPerf !== 'undefined') {
+    if (typeof nfPerf !== 'undefined' && window.NF_CONFIG?.debug?.enabled) {
         nfPerf.mark('auth-start');
     }
     
@@ -30,9 +33,11 @@ async function nfAuthenticateUser(username, password) {
         // ===============================
         const cleanUsername = username.trim();  // Remove whitespace from start/end
         const cleanPassword = password.trim();  // Remove whitespace from start/end
-        
+        nfLogger.debug('Cleaned username', { cleanUsername });
+        nfLogger.debug('Cleaned password length', { length: cleanPassword.length, masked: true });
         // Check if both fields are filled
         if (!cleanUsername || !cleanPassword) {
+            nfLogger.error('Missing credentials', { cleanUsername, cleanPassword });
             const errorMessage = nfGetMessage('missingCredentials');
             if (typeof NFError !== 'undefined') {
                 throw new NFError(errorMessage, 'MISSING_CREDENTIALS');
@@ -51,12 +56,18 @@ async function nfAuthenticateUser(username, password) {
             nfLogger.info('Attempting authentication', { username: cleanUsername });
         }
         
+        window.nfLogger.debug('Authentication starting', { 
+            username: cleanUsername,
+            hasConfig: !!window.NF_CONFIG,
+            apiUrl: ZAMMAD_API_URL()
+        });
+        
         // ===============================
         // API CALL FOR AUTHENTICATION
         // ===============================
         // Use /users/me endpoint to validate credentials
-        const response = await fetch(`${ZAMMAD_API_URL}/users/me`, {
-            method: 'GET',
+        nfLogger.debug('About to fetch', { url: `${ZAMMAD_API_URL()}/users/me` });
+        const response = await nfApiGet(`${ZAMMAD_API_URL()}/users/me`, {
             headers: {
                 'Authorization': `Basic ${credentials}`,  // HTTP Basic Authentication Header
                 'Content-Type': 'application/json'
@@ -72,7 +83,7 @@ async function nfAuthenticateUser(username, password) {
                 // LOGIN ATTEMPTS TRACKING
                 // ===============================
                 nf._loginAttempts++;
-                const maxAttempts = window.NF_CONFIG?.ui?.login?.maxAttempts || 3;
+                const maxAttempts = window.NF_CONFIG.ui.login.maxAttempts;
                 
                 if (nf._loginAttempts >= maxAttempts) {
                     // Lock account after too many attempts
@@ -138,7 +149,7 @@ async function nfAuthenticateUser(username, password) {
         if (typeof nfLogger !== 'undefined') {
             nfLogger.info('Authentication successful', { userId: userData.id });
         }
-        if (typeof nfPerf !== 'undefined') {
+        if (typeof nfPerf !== 'undefined' && window.NF_CONFIG?.debug?.enabled) {
             nfPerf.measure('Authentication', 'auth-start');  // Complete performance measurement
         }
         
@@ -187,7 +198,7 @@ async function nfFetchTicketDetail(ticketId) {
     }
     
     // Performance measurement start (with fallback)
-    if (typeof nfPerf !== 'undefined') {
+    if (typeof nfPerf !== 'undefined' && window.NF_CONFIG?.debug?.enabled) {
         nfPerf.mark('fetch-ticket-detail-start');
     }
     
@@ -196,8 +207,7 @@ async function nfFetchTicketDetail(ticketId) {
         // LOAD TICKET BASIC DATA
         // ===============================
         // Load the basic information of the ticket (title, status, date, etc.)
-        const ticketResponse = await fetch(`${ZAMMAD_API_URL}/tickets/${ticketId}`, {
-            method: 'GET',
+        const ticketResponse = await nfApiGet(`${ZAMMAD_API_URL()}/tickets/${ticketId}`, {
             headers: {
                 'Authorization': `Basic ${nf.userToken}`,  // Use stored credentials
                 'Content-Type': 'application/json'
@@ -212,8 +222,7 @@ async function nfFetchTicketDetail(ticketId) {
         // LOAD TICKET ARTICLES/MESSAGES
         // ===============================
         // Load all articles (messages, replies, internal notes) of the ticket
-        const articlesResponse = await fetch(`${ZAMMAD_API_URL}/ticket_articles/by_ticket/${ticketId}`, {
-            method: 'GET',
+        const articlesResponse = await nfApiGet(`${ZAMMAD_API_URL()}/ticket_articles/by_ticket/${ticketId}`, {
             headers: {
                 'Authorization': `Basic ${nf.userToken}`,  // Use stored credentials
                 'Content-Type': 'application/json'
@@ -236,16 +245,60 @@ async function nfFetchTicketDetail(ticketId) {
         }));
         
         // ===============================
-        // CACHE TICKET DETAILS (WITH FALLBACK)
+        // CONDITIONAL CACHE TICKET DETAILS
         // ===============================
-        // Cache ticket details with configurable TTL (longer as details change less often)
+        // Cache strategy based on ticket age and state:
+        // - Active current year tickets: cache for 15 minutes (refreshable)
+        // - Closed current year tickets: cache for 4 hours (recent, might get updates)
+        // - Archived tickets (previous years): cache for 30 days (stable, rarely change)
         if (typeof nfCache !== 'undefined') {
-            const cacheTTL = window.NF_CONFIG?.ui?.cache?.ticketDetailTTL || (10 * 60 * 1000);  // Fallback: 10 minutes
+            const ticketYear = new Date(ticket.created_at).getFullYear();
+            const currentYear = new Date().getFullYear();
+            const ticketStateId = ticket.state_id;
+            
+            // Get closed state IDs from config
+            const closedStateIds = window.NF_CONFIG.ui.filters.statusCategories.closed;
+            const isClosedTicket = closedStateIds.includes(ticketStateId);
+            
+            let cacheTTL;
+            let cacheDescription;
+            let cacheReason;
+            
+            if (ticketYear < currentYear) {
+                // Archived tickets (any status): long cache
+                cacheTTL = window.NF_CONFIG.ui.cache.archivedTicketDetailTTL;
+                cacheDescription = 'long-term (archived)';
+                cacheReason = 'previous year';
+            } else if (isClosedTicket) {
+                // Current year closed tickets: medium cache
+                cacheTTL = window.NF_CONFIG.ui.cache.currentYearClosedTicketDetailTTL;
+                cacheDescription = 'medium-term (closed current year)';
+                cacheReason = 'closed current year';
+            } else {
+                // Current year active tickets: short cache (refreshable)
+                cacheTTL = window.NF_CONFIG.ui.cache.currentYearActiveTicketDetailTTL;
+                cacheDescription = 'short-term (active current year)';
+                cacheReason = 'active current year';
+            }
+            
             // Add timestamp for better logging
             ticket.cachedAt = Date.now();
             nfCache.set(cacheKey, ticket, cacheTTL);
+            
             if (typeof nfLogger !== 'undefined') {
-                nfLogger.debug('Ticket detail cached', { key: cacheKey, ticketId, articleCount: articles.length, ttl: `${cacheTTL/1000}s` });
+                nfLogger.debug('Ticket detail cache strategy', { 
+                    key: cacheKey, 
+                    ticketId, 
+                    articleCount: articles.length, 
+                    strategy: cacheDescription,
+                    reason: cacheReason,
+                    ttlMinutes: Math.round(cacheTTL / (60 * 1000)),
+                    ticketYear,
+                    currentYear,
+                    ticketStateId,
+                    isClosedTicket,
+                    localStorage: true 
+                });
             }
         }
         
@@ -254,7 +307,7 @@ async function nfFetchTicketDetail(ticketId) {
         }
         
         // Performance measurement complete (with fallback)
-        if (typeof nfPerf !== 'undefined') {
+        if (typeof nfPerf !== 'undefined' && window.NF_CONFIG?.debug?.enabled) {
             nfPerf.measure('Fetch Ticket Detail', 'fetch-ticket-detail-start');
         }
         
@@ -309,7 +362,7 @@ async function nfCreateTicket(subject, body, files) {
         // Create ticket object according to Zammad API schema
         const ticketData = {
             title: subject,                    // Ticket title
-            group_id: window.NF_CONFIG?.ui?.defaultGroup || 2,  // Default group from configuration (Fallback: 2)
+            group_id: window.NF_CONFIG.ui.defaultGroup,  // Default group from configuration
             customer_id: nf.userId,           // Use ID of logged in user
             article: {                        // First message of the ticket
                 subject: subject,             // Subject of the first message
@@ -323,13 +376,11 @@ async function nfCreateTicket(subject, body, files) {
         // API CALL TO CREATE TICKET
         // ===============================
         // Send POST request to Zammad API to create ticket
-        const response = await fetch(`${ZAMMAD_API_URL}/tickets`, {
-            method: 'POST',
+        const response = await nfApiPost(`${ZAMMAD_API_URL()}/tickets`, ticketData, {
             headers: {
                 'Authorization': `Basic ${nf.userToken}`,  // Use stored credentials
                 'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(ticketData)              // Convert ticket data to JSON
+            }
         });
         
         if (!response.ok) throw new Error('Error creating ticket');
@@ -370,13 +421,11 @@ async function nfSendReply(ticketId, text, files) {
         // API CALL FOR REPLY
         // ===============================
         // Create new article/reply via POST request to ticket_articles endpoint
-        const response = await fetch(`${ZAMMAD_API_URL}/ticket_articles`, {
-            method: 'POST',
+        const response = await nfApiPost(`${ZAMMAD_API_URL()}/ticket_articles`, articleData, {
             headers: {
                 'Authorization': `Basic ${nf.userToken}`,  // Use stored credentials
                 'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(articleData)            // Convert article data to JSON
+            }
         });
         
         if (!response.ok) throw new Error('Error creating reply');
@@ -398,13 +447,11 @@ async function nfSendReply(ticketId, text, files) {
                 // SINGLE ATTACHMENT UPLOAD
                 // ===============================
                 // Upload each attachment separately (Zammad API requirement)
-                await fetch(`${ZAMMAD_API_URL}/ticket_attachment`, {
-                    method: 'POST',
+                await nfApiPost(`${ZAMMAD_API_URL()}/ticket_attachment`, attachmentData, {
                     headers: {
                         'Authorization': `Basic ${nf.userToken}`,  // Use stored credentials
                         'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(attachmentData)          // Convert attachment data to JSON
+                    }
                 });
             }
         }
@@ -432,13 +479,11 @@ async function nfCloseTicket(ticketId) {
         // API CALL TO CLOSE TICKET
         // ===============================
         // Update only the status of the ticket via PUT request
-        const response = await fetch(`${ZAMMAD_API_URL}/tickets/${ticketId}`, {
-            method: 'PUT',
+        const response = await nfApiPut(`${ZAMMAD_API_URL()}/tickets/${ticketId}`, { state_id: 4 }, {
             headers: {
                 'Authorization': `Basic ${nf.userToken}`,  // Use stored credentials
                 'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ state_id: 4 })         // 4 = 'Closed' in Zammad
+            }
         });
         
         if (!response.ok) throw new Error('Error closing ticket');
@@ -470,34 +515,63 @@ async function nfFetchTicketsFiltered(filters = {}) {
     const {
         statusCategory = window.NF_CONFIG?.ui?.filters?.defaultStatusFilter || 'active',
         year = new Date().getFullYear(),
-        sortOrder = window.NF_CONFIG?.ui?.filters?.defaultSortOrder || 'date_desc'
+        sortOrder = window.NF_CONFIG?.ui?.filters?.defaultSortOrder || 'date_desc',
+        searchQuery = ''
     } = filters;
     
     // ===============================
     // GENERATE CACHE KEY
     // ===============================
     const cacheKey = `tickets_${statusCategory}_${year}_${nf.userId}`;
+    const currentYear = new Date().getFullYear();
     
     // ===============================
-    // CACHE CHECK WITH DIFFERENT TTL
+    // CONDITIONAL CACHING BASED ON YEAR AND STATUS
     // ===============================
+    // Cache strategy:
+    // - Current year active: 15 minutes (refreshable)
+    // - Current year closed: 4 hours (recent, might get updates)
+    // - Archived (previous years): 30 days (stable)
     if (typeof nfCache !== 'undefined') {
         const cached = nfCache.get(cacheKey);
         if (cached) {
+            let cacheType;
+            if (year < currentYear) {
+                cacheType = 'archived';
+            } else if (statusCategory === 'closed') {
+                cacheType = 'current year closed';
+            } else {
+                cacheType = 'current year active';
+            }
+            
             if (typeof nfLogger !== 'undefined') {
-                nfLogger.debug('Using cached filtered tickets', { 
-                    key: cacheKey, 
+                nfLogger.debug(`Loaded tickets from cache (${cacheType})`, {
+                    key: cacheKey,
                     count: cached.length,
                     statusCategory,
-                    year
+                    year,
+                    currentYear,
+                    cacheType
                 });
             }
             return nfSortTickets(cached, sortOrder);
         }
     }
     
+    // For current year tickets or cache miss, fetch from API
+    if (typeof nfLogger !== 'undefined') {
+        const cachingStrategy = year < currentYear ? 'archived (will cache)' : 'current year (no cache)';
+        nfLogger.debug('Fetching filtered tickets', {
+            query: searchQuery,
+            statusCategory,
+            year,
+            cacheKey,
+            strategy: cachingStrategy
+        });
+    }
+    
     // Performance measurement start
-    if (typeof nfPerf !== 'undefined') {
+    if (typeof nfPerf !== 'undefined' && window.NF_CONFIG?.debug?.enabled) {
         nfPerf.mark(`fetch-tickets-${statusCategory}-start`);
     }
     
@@ -541,7 +615,7 @@ async function nfFetchTicketsFiltered(filters = {}) {
         let response;
         if (typeof NFUtils !== 'undefined' && NFUtils.withRetry) {
             response = await NFUtils.withRetry(async () => {
-                return fetch(`${baseUrl}/tickets/search?query=${encodeURIComponent(query)}`, {
+                return nfApiFetch(`${baseUrl}/tickets/search?query=${encodeURIComponent(query)}`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Basic ${nf.userToken}`,
@@ -550,7 +624,7 @@ async function nfFetchTicketsFiltered(filters = {}) {
                 });
             }, window.NF_CONFIG?.api?.retryAttempts || 3);
         } else {
-            response = await fetch(`${baseUrl}/tickets/search?query=${encodeURIComponent(query)}`, {
+            response = await nfApiFetch(`${baseUrl}/tickets/search?query=${encodeURIComponent(query)}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Basic ${nf.userToken}`,
@@ -575,31 +649,48 @@ async function nfFetchTicketsFiltered(filters = {}) {
         const ticketsArray = Array.isArray(result) ? result : (result.tickets || []);
         
         // ===============================
-        // CACHING WITH CATEGORY SPECIFIC TTL
+        // CONDITIONAL CACHING BASED ON YEAR AND STATUS
         // ===============================
         if (typeof nfCache !== 'undefined') {
             let cacheTTL;
-            const cacheConfig = window.NF_CONFIG?.ui?.cache;
+            let cacheDescription;
             
-            if (statusCategory === 'closed' && year !== new Date().getFullYear()) {
-                // Old closed tickets: 30 days cache
-                cacheTTL = cacheConfig?.archivedTicketsTTL || (30 * 24 * 60 * 60 * 1000);
+            if (year < currentYear) {
+                // Archived tickets (previous years): long cache
+                cacheTTL = window.NF_CONFIG.ui.cache.archivedTicketListTTL;
+                cacheDescription = 'archived (30 days)';
             } else if (statusCategory === 'closed') {
-                // Currently closed tickets: 15 minutes cache
-                cacheTTL = cacheConfig?.closedTicketsTTL || (15 * 60 * 1000);
+                // Current year closed tickets: medium cache
+                cacheTTL = window.NF_CONFIG.ui.cache.currentYearClosedTicketListTTL;
+                cacheDescription = 'current year closed (4 hours)';
             } else {
-                // Active tickets: 5 minutes cache
-                cacheTTL = cacheConfig?.ticketListTTL || (5 * 60 * 1000);
+                // Current year active tickets: short cache
+                cacheTTL = window.NF_CONFIG.ui.cache.currentYearActiveTicketListTTL;
+                cacheDescription = 'current year active (15 minutes)';
             }
             
             nfCache.set(cacheKey, ticketsArray, cacheTTL);
             if (typeof nfLogger !== 'undefined') {
-                nfLogger.debug('Filtered tickets cached', { 
-                    key: cacheKey, 
-                    count: ticketsArray.length, 
-                    ttl: `${cacheTTL/(1000*60)}min` 
+                nfLogger.debug('Cached ticket list', {
+                    key: cacheKey,
+                    count: ticketsArray.length,
+                    cacheType: cacheDescription,
+                    ttlMinutes: Math.round(cacheTTL / (60 * 1000)),
+                    statusCategory,
+                    year,
+                    currentYear
                 });
             }
+        }
+        
+        if (typeof nfLogger !== 'undefined') {
+            const cacheStatus = year < currentYear ? 'cached' : 'not cached (current year)';
+            nfLogger.info('Filtered tickets fetched successfully', {
+                count: ticketsArray.length,
+                statusCategory,
+                year,
+                cacheStatus
+            });
         }
         
         if (typeof nfLogger !== 'undefined') {
@@ -611,7 +702,7 @@ async function nfFetchTicketsFiltered(filters = {}) {
         }
         
         // Performance measurement complete
-        if (typeof nfPerf !== 'undefined') {
+        if (typeof nfPerf !== 'undefined' && window.NF_CONFIG?.debug?.enabled) {
             nfPerf.measure(`Fetch Filtered Tickets (${statusCategory})`, `fetch-tickets-${statusCategory}-start`);
         }
         
@@ -656,36 +747,4 @@ function nfSortTickets(tickets, sortOrder = 'date_desc') {
     }
 }
 
-// Helper functions for tickets
-function getCachedTickets(cacheKey) {
-    if (typeof nfCache !== 'undefined') {
-        const cached = nfCache.get(cacheKey);
-        if (cached) {
-            nfLogger?.debug('Using cached tickets', { key: cacheKey, count: cached.length });
-            nfLogger?.info('Tickets loaded from cache', { count: cached.length });
-            return cached;
-        }
-        nfLogger?.debug('No cached tickets found, fetching from API', { key: cacheKey });
-    }
-    return null;
-}
-
-async function fetchTicketsFromApi(query) {
-    const url = `${ZAMMAD_API_URL}/tickets/search?query=${encodeURIComponent(query)}`;
-    const headers = {
-        'Authorization': `Basic ${nf.userToken}`,
-        'Content-Type': 'application/json'
-    };
-    if (typeof NFUtils !== 'undefined' && NFUtils.withRetry) {
-        return NFUtils.withRetry(() => fetch(url, { method: 'GET', headers }), 3, 1000);
-    }
-    return fetch(url, { method: 'GET', headers });
-}
-
-function cacheTickets(cacheKey, tickets) {
-    if (typeof nfCache !== 'undefined') {
-        const cacheTTL = window.NF_CONFIG?.ui?.cache?.ticketListTTL || (5 * 60 * 1000);
-        nfCache.set(cacheKey, tickets, cacheTTL);
-        nfLogger?.debug('Tickets cached', { key: cacheKey, count: tickets.length, ttl: `${cacheTTL/1000}s` });
-    }
-}
+export { nfAuthenticateUser, nfFetchTicketsFiltered, nfCloseTicket, nfSendReply, nfFetchTicketDetail, nfCreateTicket };

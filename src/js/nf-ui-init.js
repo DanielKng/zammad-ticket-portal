@@ -1,3 +1,5 @@
+import { NF_CONFIG } from './nf-config.js';
+
 // Author: Daniel Könning
 // ===============================
 // nf-ui-init.js - UI initialization with configuration values
@@ -11,10 +13,8 @@ const NF_UI_INIT = {
      * Should be called after the page has loaded.
      */
     init: function() {
-        if (!window.NF_CONFIG) {
-            console.error('NF_CONFIG not available - UI initialization failed');
-            return;
-        }
+        // Language manager handles global labels automatically when languages are loaded
+        // The labels will be available as window.nfLabels, window.nfAriaLabels, etc.
 
         this.initTriggerButton();
         this.initMainModal();
@@ -30,7 +30,7 @@ const NF_UI_INIT = {
      * Initializes the trigger button with configurable values.
      */
     initTriggerButton: function() {
-        const config = window.NF_CONFIG.system.assets;
+        const config = NF_CONFIG.system.assets;
         const triggerBtn = document.getElementById('nf-zammad-trigger');
         const triggerImg = triggerBtn ? triggerBtn.querySelector('img') : null;
 
@@ -48,8 +48,8 @@ const NF_UI_INIT = {
      * Initializes the main modal with configurable texts.
      */
     initMainModal: function() {
-        const labels = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage);
-        const aria = window.NF_CONFIG.getAriaLabels(window.NF_CONFIG.currentLanguage);
+        const labels = window.nfLabels;
+        const aria = window.nfAriaLabels;
         
         // Modal title and subtitle
         const modalTitle = document.querySelector('.nf-modal-title');
@@ -93,7 +93,7 @@ const NF_UI_INIT = {
      * Initializes the knowledge portal card.
      */
     initKnowledgePortalCard: function() {
-        const labels = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage);
+        const labels = window.nfLabels;
         const knowledgeCard = document.querySelector('.nf-card--knowledge');
         
         if (knowledgeCard && labels) {
@@ -119,7 +119,7 @@ const NF_UI_INIT = {
      * Initializes the ticket system card.
      */
     initTicketSystemCard: function() {
-        const labels = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage);
+        const labels = window.nfLabels;
         const ticketCard = document.querySelector('.nf-card--tickets');
         
         if (ticketCard && labels) {
@@ -150,7 +150,7 @@ const NF_UI_INIT = {
      * Initializes the ticket list with configurable texts.
      */
     initTicketList: function() {
-        const labels = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage);
+        const labels = window.nfLabels;
         
         // Filter options
         const statusFilter = document.getElementById('nf_filter_status');
@@ -205,7 +205,7 @@ const NF_UI_INIT = {
      * Initializes the ticket detail view.
      */
     initTicketDetail: function() {
-        const labels = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage);
+        const labels = window.nfLabels;
         
         if (!labels.ticketDetailActions) return;
 
@@ -240,7 +240,7 @@ const NF_UI_INIT = {
      * Initializes the gallery.
      */
     initGallery: function() {
-        const aria = window.NF_CONFIG.getAriaLabels(window.NF_CONFIG.currentLanguage);
+        const aria = window.nfAriaLabels;
         const galleryOverlay = document.getElementById('nf_gallery_overlay');
         const galleryClose = document.getElementById('nf_gallery_close');
         const galleryPrev = document.getElementById('nf_gallery_prev');
@@ -255,7 +255,7 @@ const NF_UI_INIT = {
      * Initializes the login form.
      */
     initLogin: function() {
-        const labels = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage);
+        const labels = window.nfLabels;
         
         if (!labels.loginTitle || !labels.loginLabels) return;
 
@@ -295,7 +295,7 @@ const NF_UI_INIT = {
      * Initializes the new ticket form.
      */
     initNewTicket: function() {
-        const labels = window.NF_CONFIG.getLabels(window.NF_CONFIG.currentLanguage);
+        const labels = window.nfLabels;
         
         if (!labels.newTicketTitle || !labels.newTicketLabels) return;
 
@@ -350,7 +350,7 @@ const NF_UI_INIT = {
      * Initializes configurable links.
      */
     initLinks: function() {
-        const links = window.NF_CONFIG.links;
+        const links = NF_CONFIG.links;
         
         // Helpdesk/knowledge portal link
         const knowledgePortalLink = document.getElementById('nf_knowledge_portal_link');
@@ -362,3 +362,12 @@ const NF_UI_INIT = {
 
 // Global availability
 window.NF_UI_INIT = NF_UI_INIT;
+
+// Ensure template references are correct after DOM is loaded
+import { nf } from './nf-dom.js';
+document.addEventListener('DOMContentLoaded', () => {
+    nf.templates.ticketListRow = document.getElementById('nf_ticketlist_row_template');
+    nf.templates.ticketDetailHeader = document.getElementById('nf_ticketdetail_header_template');
+    nf.templates.ticketDetailMessage = document.getElementById('nf_ticketdetail_message_template');
+    nf.templates.searchResult = document.getElementById('nf_search_result_template');
+});

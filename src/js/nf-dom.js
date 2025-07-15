@@ -10,7 +10,8 @@
 // API CONFIGURATION
 // ===============================
 // Base URL for the Zammad API - uses config from nf-config.js if available
-const ZAMMAD_API_URL = window.NF_CONFIG?.api?.baseUrl;
+// Note: Access dynamically via function to ensure NF_CONFIG is loaded
+const ZAMMAD_API_URL = () => window.NF_CONFIG?.api?.baseUrl;
 
 // ===============================
 // GLOBAL NF OBJECT - CENTRAL STATE STORE
@@ -128,3 +129,5 @@ const nf = {
         searchResult: document.getElementById('nf_search_result_template')          // Template for search results
     }
 };
+
+export { nf, ZAMMAD_API_URL };

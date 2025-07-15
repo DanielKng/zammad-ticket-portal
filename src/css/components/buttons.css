@@ -38,7 +38,7 @@
   filter: brightness(0.9);
 }
 
-/* Mobile Anpassungen */
+/* Mobile adjustments */
 @media (max-width: 600px) {
   .nf-btn--close {
     width: 100%;

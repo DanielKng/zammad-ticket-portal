@@ -5,6 +5,12 @@
 // This file implements an internal gallery view for images in ticket attachments
 // with navigation between multiple images and fallback to a new tab for documents.
 
+import { nfApiGet, nfApiFetch } from './nf-api-utils.js';
+import { NF_CONFIG } from './nf-config.js';
+import { nf } from './nf-dom.js';
+import { nfShow, nfHide, nfSetLoading } from './nf-helpers.js';
+import nfModal from './nf-modal.js';
+
 // ===============================
 // GALLERY MANAGEMENT
 // ===============================
@@ -58,7 +64,7 @@ async function nfOpenGallery(imageUrl, allImages = [], startIndex = 0) {
     // ===============================
     await nfDisplayCurrentImage();
     nfUpdateGalleryNavigation();
-    overlay.classList.remove('nf-hidden');
+    nfShow(overlay);
     overlay.classList.add('nf-gallery-active');
     document.body.style.overflow = 'hidden';
     // ===============================
@@ -72,12 +78,68 @@ async function nfOpenGallery(imageUrl, allImages = [], startIndex = 0) {
  */
 function nfCloseGallery() {
     const overlay = document.getElementById('nf_gallery_overlay');
-    if (!overlay) return;
+    if (!overlay) {
+        window.nfLogger.warn('Gallery overlay not found when trying to close');
+        return;
+    }
+    
+    window.nfLogger.debug('Closing gallery', { 
+        hasActiveClass: overlay.classList.contains('nf-gallery-active'),
+        hasHiddenClass: overlay.classList.contains('nf-hidden'),
+        computedStyle: window.getComputedStyle(overlay).display
+    });
+    
+    // Remove active state (triggers CSS transition to hide)
     overlay.classList.remove('nf-gallery-active');
-    overlay.classList.add('nf-hidden');
+    
+    // Restore body scroll immediately
     document.body.style.overflow = '';
-    nfCleanupGalleryEvents();
+    
+    // Wait for transition to complete, then manually close and restore ticket detail state
+    setTimeout(() => {
+        // Manually close gallery without using modal system to preserve other modal states
+        overlay.classList.add('nf-hidden');
+        overlay.setAttribute('aria-hidden', 'true');
+        
+        // Remove blur from gallery
+        overlay.classList.remove('nf-blur-bg');
+        
+        // Restore the ticket detail modal as the active (non-blurred) modal
+        const ticketDetailContainer = document.getElementById('nf_ticketdetail_container');
+        if (ticketDetailContainer && !ticketDetailContainer.classList.contains('nf-hidden')) {
+            // Remove blur from ticket detail (make it active again)
+            ticketDetailContainer.classList.remove('nf-blur-bg');
+            ticketDetailContainer.setAttribute('aria-hidden', 'false');
+            
+            // IMPORTANT: Remove inert attribute to make it interactive again
+            ticketDetailContainer.removeAttribute('inert');
+            
+            // Ensure background elements remain blurred and inert
+            const backgroundElements = ['nf_modal_overlay', 'nf_ticketlist_container'];
+            backgroundElements.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.classList.add('nf-blur-bg');
+                    el.setAttribute('inert', '');
+                }
+            });
+            
+            // Find a focusable element in the ticket detail modal
+            const focusable = ticketDetailContainer.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (focusable.length > 0) {
+                focusable[0].focus();
+            } else {
+                ticketDetailContainer.focus();
+            }
+        }
+        
+        nfCleanupGalleryEvents();
+        window.nfLogger.debug('Gallery closed and cleaned up');
+    }, 300); // Match CSS transition duration
 }
+
+// Make nfCloseGallery available globally for the main keyboard handler
+window.nfCloseGallery = nfCloseGallery;
 
 /**
  * Loads an authenticated image for gallery display
@@ -87,13 +149,14 @@ function nfCloseGallery() {
  */
 async function nfLoadAuthenticatedImage(imageUrl) {
     try {
-        const response = await fetch(imageUrl, {
+        // Use nfApiFetch to get the raw response for binary data
+        const response = await nfApiFetch(imageUrl, {
             method: 'GET',
-            headers: {
-                'Authorization': `Basic ${nf.userToken}`
-            }
+            headers: { 'Authorization': `Basic ${nf.userToken}` },
         });
-        if (!response.ok) {
+        // nfApiFetch returns parsed JSON or text, but for images we need the raw response
+        // If response is not a Response object, fallback:
+        if (!(response instanceof Response)) {
             throw new Error('Image could not be loaded');
         }
         const blob = await response.blob();
@@ -103,9 +166,8 @@ async function nfLoadAuthenticatedImage(imageUrl) {
             reader.onerror = reject;
             reader.readAsDataURL(blob);
         });
-    } catch (error) {
-        console.error('Error loading image:', error);
-        throw error;
+    } catch (err) {
+        throw new Error('Image could not be loaded');
     }
 }
 
@@ -138,7 +200,7 @@ async function nfDisplayCurrentImage() {
                 setTimeout(resolve, 2000);
             });
         } catch (fallbackError) {
-            console.warn('Image could not be loaded:', fallbackError);
+            window.nfLogger.warn('Image could not be loaded', fallbackError);
         }
     } finally {
         nfSetLoading(false);
@@ -146,9 +208,9 @@ async function nfDisplayCurrentImage() {
     // Show info if multiple images
     if (info && nfGalleryImages.length > 1) {
         info.textContent = `${nfCurrentImageIndex + 1} of ${nfGalleryImages.length}`;
-        info.classList.remove('nf-hidden');
+        nfShow(info);
     } else if (info) {
-        info.classList.add('nf-hidden');
+        nfHide(info);
     }
 }
 
@@ -160,12 +222,12 @@ function nfUpdateGalleryNavigation() {
     const nextBtn = document.getElementById('nf_gallery_next');
     if (!prevBtn || !nextBtn) return;
     if (nfGalleryImages.length <= 1) {
-        prevBtn.classList.add('nf-hidden');
-        nextBtn.classList.add('nf-hidden');
+        nfHide(prevBtn);
+        nfHide(nextBtn);
         return;
     }
-    prevBtn.classList.remove('nf-hidden');
-    nextBtn.classList.remove('nf-hidden');
+    nfShow(prevBtn);
+    nfShow(nextBtn);
     if (nfCurrentImageIndex === 0) {
         prevBtn.style.opacity = '0.5';
         prevBtn.style.cursor = 'not-allowed';
@@ -214,20 +276,20 @@ function nfIsImageFile(url) {
     if (!url) return false;
     const urlLower = url.toLowerCase();
     // Debug output for troubleshooting
-    console.log('nfIsImageFile checking URL:', url);
+    window.nfLogger.debug('nfIsImageFile checking URL', { url });
     // Special handling for Zammad API URLs (no file extensions)
     if (urlLower.includes('/api/v1/attachments/')) {
-        console.log('API attachment recognized as image:', url);
+        window.nfLogger.debug('API attachment recognized as image', { url });
         return true;
     }
     // Check for standard file extensions for normal URLs
-    const imageExtensions = window.NF_CONFIG?.security?.imageExtensions || ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+    const imageExtensions = NF_CONFIG?.security?.imageExtensions || ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
     const hasImageExtension = imageExtensions.some(ext => urlLower.includes(ext));
     if (hasImageExtension) {
-        console.log('File extension recognized as image:', url);
+        window.nfLogger.debug('File extension recognized as image', { url });
         return true;
     }
-    console.log('URL not recognized as image:', url);
+    window.nfLogger.debug('URL not recognized as image', { url });
     return false;
 }
 
@@ -250,17 +312,21 @@ async function nfOpenGalleryForAttachment(imageUrl, allImages = []) {
         const overlay = document.getElementById('nf_gallery_overlay');
         const image = document.getElementById('nf_gallery_image');
         if (!overlay || !image) {
-            console.error('Gallery elements not found');
+            window.nfLogger.error('Gallery elements not found');
             return;
         }
         await nfDisplayCurrentImage();
         nfUpdateGalleryNavigation();
         overlay.classList.remove('nf-hidden');
+        overlay.style.display = 'flex'; // Ensure it's visible
         overlay.classList.add('nf-gallery-active');
         document.body.style.overflow = 'hidden';
         nfInitializeGalleryEvents();
+        
+        // Use modal system to handle blur properly
+        nfModal.open(overlay);
     } catch (error) {
-        console.error('Error opening gallery:', error);
+        window.nfLogger.error('Error opening gallery', error);
     } finally {
         nfSetLoading(false);
     }
@@ -274,30 +340,67 @@ function nfInitializeGalleryEvents() {
     const closeBtn = document.getElementById('nf_gallery_close');
     const prevBtn = document.getElementById('nf_gallery_prev');
     const nextBtn = document.getElementById('nf_gallery_next');
+    
+    window.nfLogger.debug('Initializing gallery events', {
+        overlay: !!overlay,
+        closeBtn: !!closeBtn,
+        prevBtn: !!prevBtn,
+        nextBtn: !!nextBtn
+    });
+    
     nfCleanupGalleryEvents();
+    
     if (closeBtn) {
-        closeBtn.addEventListener('click', nfCloseGallery);
+        const closeBtnHandler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            window.nfLogger.debug('Close button clicked');
+            nfCloseGallery();
+        };
+        closeBtn._nfClickHandler = closeBtnHandler;
+        closeBtn.addEventListener('click', closeBtnHandler);
+        window.nfLogger.debug('Close button event handler attached');
+    } else {
+        window.nfLogger.warn('Close button not found in DOM');
     }
+    
     if (overlay) {
-        overlay.addEventListener('click', (e) => {
+        const overlayHandler = (e) => {
+            window.nfLogger.debug('Overlay clicked', { 
+                target: e.target, 
+                overlay: overlay,
+                isOverlayTarget: e.target === overlay 
+            });
             if (e.target === overlay) {
+                window.nfLogger.debug('Overlay background clicked, closing gallery');
                 nfCloseGallery();
             }
-        });
+        };
+        overlay._nfClickHandler = overlayHandler;
+        overlay.addEventListener('click', overlayHandler);
+        window.nfLogger.debug('Overlay event handler attached');
+    } else {
+        window.nfLogger.warn('Overlay not found in DOM');
     }
+    
     if (prevBtn) {
-        prevBtn.addEventListener('click', (e) => {
+        const prevHandler = (e) => {
             e.stopPropagation();
             nfGalleryPrevious();
-        });
+        };
+        prevBtn._nfClickHandler = prevHandler;
+        prevBtn.addEventListener('click', prevHandler);
     }
     if (nextBtn) {
-        nextBtn.addEventListener('click', (e) => {
+        const nextHandler = (e) => {
             e.stopPropagation();
             nfGalleryNext();
-        });
+        };
+        nextBtn._nfClickHandler = nextHandler;
+        nextBtn.addEventListener('click', nextHandler);
     }
     document.addEventListener('keydown', nfGalleryKeyHandler);
+    window.nfLogger.debug('Gallery events initialization complete');
 }
 
 /**
@@ -308,45 +411,63 @@ function nfCleanupGalleryEvents() {
     const overlay = document.getElementById('nf_gallery_overlay');
     const prevBtn = document.getElementById('nf_gallery_prev');
     const nextBtn = document.getElementById('nf_gallery_next');
-    if (closeBtn) {
-        closeBtn.removeEventListener('click', nfCloseGallery);
+    
+    window.nfLogger.debug('Cleaning up gallery events', {
+        closeBtn: !!closeBtn,
+        overlay: !!overlay,
+        prevBtn: !!prevBtn,
+        nextBtn: !!nextBtn
+    });
+    
+    // Store references to event handlers for proper cleanup
+    if (closeBtn && closeBtn._nfClickHandler) {
+        closeBtn.removeEventListener('click', closeBtn._nfClickHandler);
+        delete closeBtn._nfClickHandler;
+        window.nfLogger.debug('Close button event handler removed');
     }
-    if (overlay) {
-        overlay.removeEventListener('click', nfCloseGallery);
+    if (overlay && overlay._nfClickHandler) {
+        overlay.removeEventListener('click', overlay._nfClickHandler);
+        delete overlay._nfClickHandler;
+        window.nfLogger.debug('Overlay event handler removed');
     }
-    if (prevBtn) {
-        prevBtn.removeEventListener('click', nfGalleryPrevious);
+    if (prevBtn && prevBtn._nfClickHandler) {
+        prevBtn.removeEventListener('click', prevBtn._nfClickHandler);
+        delete prevBtn._nfClickHandler;
     }
-    if (nextBtn) {
-        nextBtn.removeEventListener('click', nfGalleryNext);
+    if (nextBtn && nextBtn._nfClickHandler) {
+        nextBtn.removeEventListener('click', nextBtn._nfClickHandler);
+        delete nextBtn._nfClickHandler;
     }
+    
     document.removeEventListener('keydown', nfGalleryKeyHandler);
+    window.nfLogger.debug('Gallery event cleanup complete');
 }
 
 /**
- * Handles keyboard input in the gallery
+ * Handles keyboard input in the gallery (Arrow keys only)
+ * ESC key is handled by the main keyboard handler in nf-events.js
  *
  * @param {KeyboardEvent} e - Keyboard event
  */
 function nfGalleryKeyHandler(e) {
     const overlay = document.getElementById('nf_gallery_overlay');
-    if (!overlay || overlay.classList.contains('nf-hidden')) {
+    // Only handle events when gallery is actually active and visible
+    if (!overlay || !overlay.classList.contains('nf-gallery-active')) {
         return;
     }
+    
     switch (e.key) {
-        case 'Escape':
-            e.preventDefault();
-            e.stopPropagation();
-            nfCloseGallery();
-            break;
         case 'ArrowLeft':
             e.preventDefault();
+            e.stopPropagation();
             nfGalleryPrevious();
             break;
         case 'ArrowRight':
             e.preventDefault();
+            e.stopPropagation();
             nfGalleryNext();
             break;
+        // ESC is handled by main keyboard handler in nf-events.js
     }
 }
 
@@ -370,3 +491,5 @@ function nfExtractImagesFromMessage(messageElement) {
     });
     return images;
 }
+
+export { nfIsImageFile, nfOpenGalleryForAttachment, nfExtractImagesFromMessage, nfCloseGallery };

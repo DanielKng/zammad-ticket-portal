@@ -1,0 +1,70 @@
+{
+  "modalTitle": "Wie können wir Ihnen helfen?",
+  "modalSubtitle": "Durchsuchen Sie das Wissensportal oder erstellen Sie ein Support-Ticket.",
+  "searchPlaceholder": "Wissensportal durchsuchen…",
+  "closeButton": "Schließen",
+  "knowledgePortalTitle": "Wissensportal",
+  "knowledgePortalDesc": "Finden Sie Antworten auf häufig gestellte Fragen",
+  "knowledgePortalButton": "Zum Wissensportal",
+  "ticketSystemTitle": "Ticket-System",
+  "ticketSystemDesc": "Erstellen oder verwalten Sie Ihre Support-Anfragen",
+  "createTicketButton": "Ticket erstellen",
+  "viewTicketsButton": "Meine Tickets anzeigen",
+  "ticketListFilters": {
+    "active": "Aktive Tickets",
+    "closed": "Geschlossene Tickets",
+    "all": "Alle Tickets"
+  },
+  "ticketListSort": {
+    "date_desc": "Neueste zuerst",
+    "date_asc": "Älteste zuerst",
+    "status": "Nach Status",
+    "subject": "Nach Betreff"
+  },
+  "ticketListHeaders": {
+    "id": "#",
+    "subject": "Betreff",
+    "created": "Erstellt am",
+    "status": "Status"
+  },
+  "ticketListEmpty": "Keine Tickets gefunden.",
+  "reloadButton": "Neu laden",
+  "ticketDetailActions": {
+    "reply": "Antworten",
+    "replyPlaceholder": "Ihre Antwort...",
+    "sendReply": "Antwort senden",
+    "cancelReply": "Abbrechen",
+    "closeTicket": "Ticket als gelöst markieren"
+  },
+  "ticketDetailCreated": "Erstellt am:",
+  "ticketDetailNumber": "Ticket Nr.",
+  "ticketDetailLastUpdated": "Zuletzt aktualisiert:",
+  "galleryAlt": "Anhang",
+  "unknownStatus": "Unbekannt",
+  "loginTitle": "Anmeldung",
+  "loginLabels": {
+    "username": "Benutzername",
+    "password": "Passwort",
+    "usernamePlaceholder": "Benutzername",
+    "passwordPlaceholder": "Passwort",
+    "submitButton": "Anmelden"
+  },
+  "loginErrors": {
+    "missingCredentials": "Benutzername und Passwort sind erforderlich",
+    "invalidCredentials": "Ungültige Anmeldedaten",
+    "accountLocked": "Konto gesperrt",
+    "networkError": "Netzwerkfehler bei der Anmeldung",
+    "serverError": "Serverfehler bei der Anmeldung"
+  },
+  "newTicketTitle": "Neues Ticket erstellen",
+  "newTicketLabels": {
+    "subject": "Betreff",
+    "subjectPlaceholder": "Eine kurze Zusammenfassung Ihrer Anfrage",
+    "body": "Nachricht",
+    "bodyPlaceholder": "Beschreiben Sie Ihre Anfrage...",
+    "attachment": "Dateianhang (optional)",
+    "attachmentText": "📎 Dateien hier hinziehen oder klicken zum Auswählen",
+    "submitButton": "Ticket einreichen",
+    "cancelButton": "Abbrechen"
+  }
+}

@@ -1,3 +1,11 @@
+import { NF_CONFIG } from './nf-config.js';
+import { nf } from './nf-dom.js';
+import { nfShow, nfHide } from './nf-helpers.js';
+import { nfSetLoading } from './nf-helpers.js';
+import { nfShowStatus, nfClearLoginStatus, nfShowPersistentLoginHint, nfClearPersistentLoginHint } from './nf-status.js';
+import { nfAuthenticateUser } from './nf-api.js';
+import nfModal from './nf-modal.js';
+
 // Author: Daniel Könning
 // ===============================
 // nf-ui.js - UI control and navigation
@@ -14,12 +22,18 @@
  * Resets the UI state to the start page
  */
 function nfShowStart() {
-    nfOpenModal('nf_modal_overlay');
-    nfShow(nf.start);                 // Show main menu
+    window.nfLogger.debug('nfShowStart called');
+    // Hide all other containers first
     nfHide(nf.ticketListContainer);   // Hide ticket list
     nfHide(nf.ticketDetailContainer); // Hide ticket details
     nfHide(nf.loginContainer);        // Hide login form
     nfHide(nf.newTicketContainer);    // Hide new ticket form
+    
+    // Show the main start content
+    nfShow(nf.start);                 // Show main menu content
+    
+    // Open the main overlay modal
+    nfModal.open('nf_modal_overlay');
     
     // ===============================
     // EVENT HANDLER CLEANUP
@@ -27,22 +41,16 @@ function nfShowStart() {
     // Clean up login handlers when login modal is closed
     nfCleanupLoginHandlers();
     
-    // ===============================
-    // REMOVE BLUR EFFECT
-    // ===============================
-    // Remove blur effect as main menu is in the foreground
-    const modalCenterbox = document.querySelector('.nf-modal-centerbox');
-    if (modalCenterbox) modalCenterbox.classList.remove('nf-blur-bg');
-    
-    // Remove blur effect from ticket list
-    const ticketListContainer = document.querySelector('.nf-ticketlist-container');
-    if (ticketListContainer) ticketListContainer.classList.remove('nf-blur-bg');
+    // Remove all blur effects using modal system
+    nfModal.unblurBackground();
     
     // ===============================
     // DISABLE LOADER
     // ===============================
     // Hide loading spinner after main menu is shown
     nfSetLoading(false);
+    
+    window.nfLogger.debug('nfShowStart completed successfully');
 }
 
 // ===============================
@@ -54,25 +62,16 @@ function nfShowStart() {
  * Implements layered modal system with blur effect
  */
 function nfShowTicketList() {
-    nfOpenModal('nf_ticketlist_container');
+    console.log('[DEBUG] nfShowTicketList called');
+    
+    // Show/hide elements first
     nfShow(nf.start);                 // Show main menu in background
-    nfShow(nf.ticketListContainer);   // Show ticket list in foreground
     nfHide(nf.ticketDetailContainer); // Hide ticket details
     nfHide(nf.loginContainer);        // Hide login form
     nfHide(nf.newTicketContainer);    // Hide new ticket form
     
-    // ===============================
-    // BACKGROUND BLUR FOR LAYER SYSTEM
-    // ===============================
-    // Apply blur effect to main menu in background
-    const modalCenterbox = document.querySelector('.nf-modal-centerbox');
-    if (modalCenterbox && !modalCenterbox.classList.contains('nf-blur-bg')) {
-        modalCenterbox.classList.add('nf-blur-bg');
-    }
-    
-    // Remove blur effect from ticket list (if returning from details)
-    const ticketListContainer = document.querySelector('.nf-ticketlist-container');
-    if (ticketListContainer) ticketListContainer.classList.remove('nf-blur-bg');
+    // Open the ticket list modal (this will show it, set focus, and blur background)
+    nfModal.open('nf_ticketlist_container');
     
     // ===============================
     // DISABLE LOADER
@@ -88,29 +87,18 @@ function nfShowTicketList() {
 /**
  * Shows the ticket details with nested background modals
  * Implements three-layer modal system: Details > List > Main menu
+ * Background layers (main menu and ticket list) should be blurred
  */
 function nfShowTicketDetail() {
-    nfOpenModal('nf_ticketdetail_container');
+    // Show/hide elements first
     nfShow(nf.start);                 // Show main menu in background
     nfShow(nf.ticketListContainer);   // Show ticket list in middle layer
-    nfShow(nf.ticketDetailContainer); // Show ticket details in foreground
     nfHide(nf.loginContainer);        // Hide login form
     nfHide(nf.newTicketContainer);    // Hide new ticket form
-    
-    // ===============================
-    // BACKGROUND BLUR FOR DEEP NAVIGATION
-    // ===============================
-    // Blur background elements for visual separation
-    const modalCenterbox = document.querySelector('.nf-modal-centerbox');
-    if (modalCenterbox && !modalCenterbox.classList.contains('nf-blur-bg')) {
-        modalCenterbox.classList.add('nf-blur-bg');
-    }
-    // Also blur the ticket list
-    const ticketListContainer = document.querySelector('.nf-ticketlist-container');
-    if (ticketListContainer && !ticketListContainer.classList.contains('nf-blur-bg')) {
-        ticketListContainer.classList.add('nf-blur-bg');
-    }
-    
+
+    // Open the ticket detail modal (this will show it, set focus, and blur background layers)
+    nfModal.open('nf_ticketdetail_container');
+
     // ===============================
     // DISABLE LOADER
     // ===============================
@@ -127,27 +115,19 @@ function nfShowTicketDetail() {
  * Used for authentication before protected actions
  */
 function nfShowLogin() {
-    nfOpenModal('nf_login_container');
+    // Show/hide elements first
     nfShow(nf.start);                 // Show main menu in background
     nfHide(nf.ticketListContainer);   // Hide ticket list
     nfHide(nf.ticketDetailContainer); // Hide ticket details
-    nfShow(nf.loginContainer);        // Show login form in foreground
     nfHide(nf.newTicketContainer);    // Hide new ticket form
-    
+
+    // Open the login modal (this will show it, set focus, and blur background)
+    nfModal.open('nf_login_container');
+
     // ===============================
     // MANAGE LOGIN HINTS AND STATE
     // ===============================
     nfUpdateLoginDisplay();
-    
-    // ===============================
-    // BACKGROUND BLUR FOR LOGIN FOCUS
-    // ===============================
-    // Blur main menu for better focus on login
-    const modalCenterbox = document.querySelector('.nf-modal-centerbox');
-    if (modalCenterbox && !modalCenterbox.classList.contains('nf-blur-bg')) {
-        modalCenterbox.classList.add('nf-blur-bg');
-    }
-    
     // ===============================
     // DISABLE LOADER
     // ===============================
@@ -164,40 +144,26 @@ function nfShowLogin() {
  * Shows hints, warnings, or lockout messages as appropriate
  */
 function showLockoutMessage() {
-    const lockoutMessage = window.NF_CONFIG?.ui?.login?.lockoutMessage || 'Account locked. Please contact support.';
-    if (nf.loginLockout) {
-        nf.loginLockout.textContent = lockoutMessage;
-        nfShow(nf.loginLockout);
-    }
-    nfHide(nf.loginHint);
-    nfHide(nf.loginWarning);
+    const lockoutMessage = NF_CONFIG.ui.login.lockoutMessage;
+    nfShowStatus(lockoutMessage, 'lockout', 'login');
     nf.loginSubmit.disabled = true;
 }
 
 function showNormalLoginDisplay() {
-    nfHide(nf.loginLockout);
     nf.loginSubmit.disabled = false;
-    const credentialsHint = (window.NF_CONFIG?.currentLanguage === 'de')
-        ? window.NF_CONFIG?.ui?.login_de?.credentialsHint
-        : window.NF_CONFIG?.ui?.login?.credentialsHint;
-    if (credentialsHint && nf.loginHint) {
-        nf.loginHint.textContent = credentialsHint;
-        nfShow(nf.loginHint);
-    } else {
-        nfHide(nf.loginHint);
+    const credentialsHint = window.nfLang.getMessage('credentialsHint');
+    if (credentialsHint) {
+        nfShowPersistentLoginHint(credentialsHint);
     }
 }
 
 function showAttemptsWarning() {
-    const maxAttempts = window.NF_CONFIG?.ui?.login?.maxAttempts || 3;
+    const maxAttempts = NF_CONFIG.ui.login.maxAttempts;
     const remaining = maxAttempts - nf._loginAttempts;
     if (remaining > 0) {
-        const attemptsTemplate = window.NF_CONFIG?.ui?.login?.attemptsWarningTemplate || 'Error! Is the username/password correct?';
+        const attemptsTemplate = NF_CONFIG.ui.login.attemptsWarningTemplate;
         const warningMessage = attemptsTemplate.replace('{remaining}', remaining);
-        if (nf.loginWarning) {
-            nf.loginWarning.textContent = warningMessage;
-            nfShow(nf.loginWarning);
-        }
+        nfShowStatus(warningMessage, 'warning', 'login');
     }
 }
 
@@ -211,7 +177,8 @@ function nfUpdateLoginDisplay() {
     if (nf._loginAttempts > 0) {
         showAttemptsWarning();
     } else {
-        nfHide(nf.loginWarning);
+        // Clear warning messages using the centralized status system
+        nfClearLoginStatus('warning');
     }
 }
 
@@ -238,12 +205,8 @@ function nfHideAll() {
     // ===============================
     // REMOVE ALL BLUR EFFECTS
     // ===============================
-    // Remove all visual effects for a clean reset
-    const modalCenterbox = document.querySelector('.nf-modal-centerbox');
-    if (modalCenterbox) modalCenterbox.classList.remove('nf-blur-bg');
-    // Remove blur effect from ticket list
-    const ticketListContainer = document.querySelector('.nf-ticketlist-container');
-    if (ticketListContainer) ticketListContainer.classList.remove('nf-blur-bg');
+    // Remove all blur effects using modal system
+    nfModal.unblurBackground();
     // Focus back on trigger button
     const trigger = document.getElementById('nf-zammad-trigger');
     if (trigger) trigger.focus();
@@ -274,21 +237,15 @@ function nfHideAll() {
  * Allows users to create new support requests
  */
 function nfShowNewTicket() {
-    nfOpenModal('nf_new_ticket_container');
+    // Show/hide elements first
     nfShow(nf.start);                 // Show main menu in background
     nfHide(nf.ticketListContainer);   // Hide ticket list
     nfHide(nf.ticketDetailContainer); // Hide ticket details
     nfHide(nf.loginContainer);        // Hide login form
-    nfShow(nf.newTicketContainer);    // Show new ticket form in foreground
     
-    // ===============================
-    // BACKGROUND BLUR FOR FORM FOCUS
-    // ===============================
-    // Blur main menu for better focus on form
-    const modalCenterbox = document.querySelector('.nf-modal-centerbox');
-    if (modalCenterbox && !modalCenterbox.classList.contains('nf-blur-bg')) {
-        modalCenterbox.classList.add('nf-blur-bg');
-    }
+    // Open the new ticket modal (this will show it, set focus, and blur background)
+    nfModal.open('nf_new_ticket_container');
+    
     // ===============================
     // DISABLE LOADER
     // ===============================
@@ -308,10 +265,8 @@ function nfShowNewTicket() {
  */
 function handleLoginSuccess(next) {
     nfHide(nf.loginContainer);
-    const modalCenterbox = document.querySelector('.nf-modal-centerbox');
-    if (modalCenterbox) modalCenterbox.classList.remove('nf-blur-bg');
-    const ticketListContainer = document.querySelector('.nf-ticketlist-container');
-    if (ticketListContainer) ticketListContainer.classList.remove('nf-blur-bg');
+    // Remove all blur effects using modal system
+    nfModal.unblurBackground();
     nfCleanupLoginHandlers();
     next();
 }
@@ -365,6 +320,11 @@ function nfCleanupLoginHandlers() {
     }
 }
 
+/**
+ * Removes blur effect from all modal containers
+ */
+
+
 // ===============================
 // RESET LOGIN STATE
 // ===============================
@@ -376,6 +336,9 @@ function nfCleanupLoginHandlers() {
 function nfResetLoginState() {
     // Clean up event handlers
     nfCleanupLoginHandlers();
+    
+    // Clear persistent login hints
+    nfClearPersistentLoginHint();
     
     // Reset login attempts only if the account is not locked
     // (Lock remains until the next successful login)
@@ -389,73 +352,4 @@ function nfResetLoginState() {
     }
 }
 
-// ===============================
-// HELPER FUNCTIONS FOR MODAL SYSTEM
-// ===============================
-
-// Helper function: Set focus on the first interactive element in the modal
-function nfFocusFirstElement(modal) {
-    // No autofocus on anything when opening
-    return;
-}
-// Helper function: Focus trap for modals
-function nfTrapFocus(modal) {
-    if (!modal) return;
-    const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-    if (!focusable.length) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    modal.addEventListener('keydown', function(e) {
-        if (e.key === 'Tab') {
-            if (e.shiftKey) {
-                if (document.activeElement === first) {
-                    e.preventDefault();
-                    last.focus();
-                }
-            } else {
-                if (document.activeElement === last) {
-                    e.preventDefault();
-                    first.focus();
-                }
-            }
-        }
-        if (e.key === 'Escape') {
-            nfHideAll();
-        }
-    });
-}
-// Lock background for screen readers as long as modal is open
-function nfSetAriaHiddenExcept(modalId) {
-    const ids = [
-        'nf_modal_overlay',
-        'nf_ticketlist_container',
-        'nf_ticketdetail_container',
-        'nf_gallery_overlay',
-        'nf_login_container',
-        'nf_new_ticket_container'
-    ];
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            if (id === modalId) {
-                el.setAttribute('aria-hidden', 'false');
-            } else {
-                el.setAttribute('aria-hidden', 'true');
-            }
-        }
-    });
-    // Additionally hide main content outside the modals
-    const mainContent = document.querySelector('body > :not(.nf-modal-overlay):not(.nf-ticketlist-container):not(.nf-ticketdetail-container):not(.nf-gallery-overlay):not(.nf-login-container):not(.nf-newticket-container)');
-    if (mainContent) mainContent.setAttribute('aria-hidden', 'true');
-}
-// When opening a modal, set focus, activate aria attributes, and focus trap
-function nfOpenModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.remove('nf-hidden');
-        modal.setAttribute('aria-hidden', 'false');
-        nfFocusFirstElement(modal);
-        nfTrapFocus(modal);
-        nfSetAriaHiddenExcept(modalId);
-    }
-}
+export { nfShowStart, nfRequireLogin, nfShowTicketList, nfShowTicketDetail, nfShowNewTicket, nfHideAll, nfResetLoginState };
