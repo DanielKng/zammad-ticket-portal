@@ -280,46 +280,6 @@ const NFUtils = {
     },
 
     // ===============================
-    // FILE VALIDATION FOR SAFE UPLOADS
-    // ===============================
-    
-    /**
-     * Validates a file against configured security policies
-     * Checks file size and MIME type against allowed values
-     * 
-     * @param {File} file - File object from HTML input to validate
-     * @returns {boolean} true if file is valid
-     * @throws {NFError} Throws specific error on validation failure
-     */
-    validateFile(file) {
-        // Load security config or use fallback values
-        const config = NF_CONFIG?.security || {};
-        const maxSize = config.maxFileSize || 10 * 1024 * 1024;
-        const allowedTypes = config.allowedFileTypes || [];
-        // ===============================
-        // FILE SIZE VALIDATION
-        // ===============================
-        if (file.size > maxSize) {
-            throw new NFError(
-                window.nfLang.getUtilsMessage('fileTooLarge', { max: (maxSize / 1024 / 1024).toFixed(1) }),
-                'FILE_TOO_LARGE',
-                { fileSize: file.size, maxSize }
-            );
-        }
-        // ===============================
-        // MIME TYPE VALIDATION
-        // ===============================
-        if (allowedTypes.length > 0 && !allowedTypes.includes(file.type)) {
-            throw new NFError(
-                window.nfLang.getUtilsMessage('fileTypeNotAllowed'),
-                'FILE_TYPE_NOT_ALLOWED',
-                { fileType: file.type, allowedTypes }
-            );
-        }
-        return true;
-    },
-
-    // ===============================
     // RETRY MECHANISM FOR ROBUST API CALLS
     // ===============================
     

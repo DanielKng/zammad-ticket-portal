@@ -34,7 +34,8 @@
     "replyPlaceholder": "Ihre Antwort...",
     "sendReply": "Antwort senden",
     "cancelReply": "Abbrechen",
-    "closeTicket": "Ticket als gelöst markieren"
+    "closeTicket": "Ticket als gelöst markieren",
+    "attachFiles": "Dateien anhängen..."
   },
   "ticketDetailCreated": "Erstellt am:",
   "ticketDetailNumber": "Ticket Nr.",

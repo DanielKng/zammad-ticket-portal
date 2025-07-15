@@ -34,7 +34,8 @@
     "replyPlaceholder": "Your reply...",
     "sendReply": "Send reply",
     "cancelReply": "Cancel",
-    "closeTicket": "Mark ticket as resolved"
+    "closeTicket": "Mark ticket as resolved",
+    "attachFiles": "Attach files..."
   },
   "ticketDetailCreated": "Created:",
   "ticketDetailNumber": "Ticket No.",

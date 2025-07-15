@@ -28,19 +28,7 @@ function nfStateLabel(stateId) {
     const states = window.nfLang.getSystemData('ticketStates');
     return states[stateId] || window.nfLang.getLabel('unknownStatus');
 }
-/**
- * Converts a file to a Base64 string for API uploads
- * @param {File} file - The file object
- * @returns {Promise<string>} Base64 string
- */
-function nfFileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = error => reject(error);
-    });
-}
 
 export { nfShow, nfHide, nfSetLoading, nfStateLabel };
 // Status/message display logic moved to nf-status.js
+// File handling logic moved to nf-file-upload.js
