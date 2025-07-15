@@ -2,7 +2,7 @@ import { NF_CONFIG } from './nf-config.js';
 import { nf } from './nf-dom.js';
 import { nfShow, nfHide } from './nf-helpers.js';
 import { nfSetLoading } from './nf-helpers.js';
-import { nfShowStatus, nfClearLoginStatus, nfShowPersistentLoginHint } from './nf-status.js';
+import { nfShowStatus, nfClearLoginStatus, nfShowPersistentLoginHint, nfClearPersistentLoginHint } from './nf-status.js';
 import { nfAuthenticateUser } from './nf-api.js';
 import nfModal from './nf-modal.js';
 
@@ -336,6 +336,9 @@ function nfCleanupLoginHandlers() {
 function nfResetLoginState() {
     // Clean up event handlers
     nfCleanupLoginHandlers();
+    
+    // Clear persistent login hints
+    nfClearPersistentLoginHint();
     
     // Reset login attempts only if the account is not locked
     // (Lock remains until the next successful login)

@@ -11,6 +11,7 @@ export function nfShowPersistentLoginHint(msg) {
     
     if (nf.loginHint) {
         nf.loginHint.textContent = msg;
+        nf.loginHint.setAttribute('data-persistent', 'true'); // Mark as persistent
         nfShow(nf.loginHint);
         // No timeout - this hint should persist
     }
@@ -38,25 +39,35 @@ export function nfShowStatus(msg, type = 'success', targetModal = null) {
 }
 
 function showLoginStatus(msg, type, duration) {
-    // Hide all login status elements first
-    if (nf.loginHint) nfHide(nf.loginHint);
-    if (nf.loginWarning) nfHide(nf.loginWarning);
-    if (nf.loginLockout) nfHide(nf.loginLockout);
-    
+    // Only hide elements that will be replaced, preserve persistent hints
     let targetElement;
     switch (type) {
         case 'info':
             targetElement = nf.loginHint;
+            // Hide other elements but not the hint we're about to show
+            if (nf.loginWarning) nfHide(nf.loginWarning);
+            if (nf.loginLockout) nfHide(nf.loginLockout);
             break;
         case 'warning':
         case 'error':
             targetElement = nf.loginWarning;
+            // Don't hide persistent hints, only hide lockout
+            if (nf.loginLockout) nfHide(nf.loginLockout);
+            // Only hide hint if it's not marked as persistent
+            if (nf.loginHint && !nf.loginHint.getAttribute('data-persistent')) {
+                nfHide(nf.loginHint);
+            }
             break;
         case 'lockout':
             targetElement = nf.loginLockout;
+            // Hide all others for lockout (serious state)
+            if (nf.loginHint) nfHide(nf.loginHint);
+            if (nf.loginWarning) nfHide(nf.loginWarning);
             break;
         default:
             targetElement = nf.loginHint;
+            if (nf.loginWarning) nfHide(nf.loginWarning);
+            if (nf.loginLockout) nfHide(nf.loginLockout);
     }
     
     if (targetElement) {
@@ -132,5 +143,12 @@ export function nfClearLoginStatus(type = 'all') {
     }
     if (type === 'all' || type === 'lockout') {
         if (nf.loginLockout) nfHide(nf.loginLockout);
+    }
+}
+
+export function nfClearPersistentLoginHint() {
+    if (nf.loginHint) {
+        nf.loginHint.removeAttribute('data-persistent');
+        nfHide(nf.loginHint);
     }
 }
