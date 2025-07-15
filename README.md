@@ -80,6 +80,14 @@ Since you'll be integrating this into your website anyway, you can upload the fi
 
 ## Recent Updates
 
+### Modal System & UX Improvements
+*July 15, 2025*
+
+- **Fixed Modal Reopening Bug** - Resolved issue where modal background appeared but content was hidden on second open
+- **Persistent Login Hints** - Credentials hint now stays visible throughout the login process
+- **Smart Status Message Handling** - Login hints remain visible even when error messages appear
+- **Enhanced Modal State Management** - Improved visibility control for better user experience
+
 ### Language System Modernization
 *July 14, 2025*
 
@@ -275,6 +283,13 @@ debug: {
 ---
 
 ## Development Timeline
+
+**July 15, 2025** *(Modal System & UX Fixes)*
+- Modal Reopening Fix - Resolved visibility issue where modal background appeared but content was hidden
+- Persistent Login Hints - Credentials hint now stays visible during entire login process
+- Smart Status Management - Error messages no longer hide persistent hints inappropriately
+- Enhanced Modal State Control - Improved `nfShowStart()` function with proper content visibility
+- Better User Experience - Login process now provides consistent visual feedback
 
 **July 14, 2025**
 - Modern Language System - Complete migration to JSON-based language management
