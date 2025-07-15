@@ -212,6 +212,7 @@ const NF_UI_INIT = {
         const replyToggle = document.getElementById('nf_ticketdetail_replytoggle');
         const replyInput = document.getElementById('nf_ticketdetail_replyinput');
         const replyBtn = document.getElementById('nf_ticketdetail_replybtn');
+        const attachBtn = document.getElementById('nf_ticketdetail_attachbtn');
         const cancelBtn = document.getElementById('nf_ticketdetail_replycancel');
         const closeBtn = document.getElementById('nf_ticketdetail_closebtn');
 
@@ -225,6 +226,10 @@ const NF_UI_INIT = {
 
         if (replyBtn && labels.ticketDetailActions.sendReply) {
             replyBtn.textContent = labels.ticketDetailActions.sendReply;
+        }
+
+        if (attachBtn && labels.ticketDetailActions.attachFiles) {
+            attachBtn.textContent = labels.ticketDetailActions.attachFiles;
         }
 
         if (cancelBtn && labels.ticketDetailActions.cancelReply) {

@@ -1,5 +1,6 @@
-import { nfApiFetch, nfApiGet, nfApiPost, nfApiPut, nfApiDelete } from './nf-api-utils.js';
+import { nfApiFetch, nfApiGet, nfApiPost, nfApiPut } from './nf-api-utils.js';
 import { ZAMMAD_API_URL, nf } from './nf-dom.js';
+import { nfFileToBase64 } from './nf-file-upload.js';
 
 // Author: Daniel Könning
 // ===============================

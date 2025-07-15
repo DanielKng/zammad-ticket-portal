@@ -4,7 +4,7 @@
 import { nfCreateTicket } from './nf-api.js';
 import { nfSetLoading } from './nf-helpers.js';
 import { nfShowStatus } from './nf-status.js';
-import { nfClearFilePreview } from './nf-file-upload.js';
+import { nfClearFilePreview, nfValidateFile } from './nf-file-upload.js';
 import { nf } from './nf-dom.js';
 
 /**
@@ -35,7 +35,7 @@ export async function handleNewTicketSubmit(e) {
         if (files && files.length > 0) {
             for (const file of files) {
                 try {
-                    window.NFUtils.validateFile(file);
+                    nfValidateFile(file);
                 } catch (error) {
                     throw new window.NFError(window.nfGetMessage('fileValidationFailed', undefined, { file: file.name, error: error.message }), 'FILE_VALIDATION_FAILED');
                 }

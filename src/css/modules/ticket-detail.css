@@ -398,8 +398,31 @@
 .nf-ticketdetail-replyactions {
   display: flex;
   gap: 1rem;
-  justify-content: flex-end;
   align-items: center;
+}
+
+/* Style attachment button to match other buttons */
+.nf-ticketdetail-replyactions .nf-section-btn {
+  /* Reset flex properties and ensure perfect alignment */
+  flex: none;
+  height: 44px; /* Force exact height to match other buttons */
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.5rem;
+  box-sizing: border-box;
+  min-width: auto;
+  max-width: 350px;
+  /* Override any inherited margin/positioning */
+  margin: 0;
+  vertical-align: baseline;
+  font-size: 1rem; /* Ensure same font size */
+}
+
+/* Keep send and cancel buttons grouped on the right */
+.nf-ticketdetail-replyactions .nf-btn {
+  margin-left: 0;
 }
 
 .nf-ticketdetail-replyactions .nf-btn {
@@ -411,6 +434,13 @@
   cursor: pointer;
   transition: background var(--transition-medium), transform 0.1s;
   min-width: 120px;
+  /* Ensure perfect alignment - match attachment button */
+  height: 44px;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .nf-ticketdetail-replyactions .nf-btn--primary {
@@ -447,6 +477,91 @@
   background: #1e7e34;
   filter: brightness(0.9);
 }
+
+/* ================================================
+  REPLY ATTACHMENT FUNCTIONALITY
+================================================ */
+
+/* File preview container for replies */
+.nf-ticketdetail-filepreview {
+    margin-top: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-small);
+    padding: 1rem;
+    background: var(--bg-light);
+}
+
+.nf-ticketdetail-filepreview .file-preview-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nf-ticketdetail-filepreview .file-preview-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem;
+    background: var(--bg-white);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-small);
+    font-size: 0.9rem;
+}
+
+.nf-ticketdetail-filepreview .file-preview-name {
+    flex: 1;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.nf-ticketdetail-filepreview .file-preview-size {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.nf-ticketdetail-filepreview .file-preview-remove {
+    background: var(--danger);
+    color: var(--bg-white);
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: bold;
+    transition: background var(--transition-medium);
+}
+
+.nf-ticketdetail-filepreview .file-preview-remove:hover {
+    background: #c82333;
+    transform: scale(1.1);
+}
+
+/* Responsive adjustments for reply actions */
+@media (max-width: 600px) {
+    .nf-ticketdetail-replyactions {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+    
+    .nf-ticketdetail-replyactions .nf-section-btn {
+        order: -1; /* Show attachment button first on mobile */
+        margin-right: 0;
+        width: 100%;
+    }
+    
+    .nf-ticketdetail-replyactions .nf-btn {
+        width: 100%;
+        min-width: auto;
+    }
+}
+
+/* ================================================
+  END REPLY ATTACHMENT FUNCTIONALITY
+================================================ */
 
 /* Responsive adjustments */
 @media (max-width: 900px) {

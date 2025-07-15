@@ -88,8 +88,15 @@
     <div class="nf-ticketdetail-replybox" id="nf_ticketdetail_replybox">
         <textarea class="nf-ticketdetail-replyinput" id="nf_ticketdetail_replyinput" placeholder=""></textarea>
         <div class="nf-ticketdetail-replyactions">
+            <button class="nf-section-btn nf-section-btn--ticketview nf-ticketdetail-attachbtn" id="nf_ticketdetail_attachbtn"></button>
             <button class="nf-btn nf-btn--primary" id="nf_ticketdetail_replybtn"></button>
             <button class="nf-btn nf-btn--danger" id="nf_ticketdetail_replycancel" type="button"></button>
+        </div>
+        <!-- Hidden file input for attachments -->
+        <input type="file" id="nf_ticketdetail_attachment" multiple style="display: none;">
+        <!-- File preview for reply attachments -->
+        <div class="nf-ticketdetail-filepreview" id="nf_ticketdetail_filepreview" style="display: none;">
+            <div class="file-preview-list" id="nf_ticketdetail_filepreview_list"></div>
         </div>
     </div>
     <button class="nf-ticketdetail-replytoggle nf-btn--success" id="nf_ticketdetail_closebtn"></button>

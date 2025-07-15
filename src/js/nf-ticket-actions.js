@@ -12,6 +12,12 @@ import { nfShowStatus } from './nf-status.js';
 import { nfShowTicketList } from './nf-ui.js';
 import { nfSendReply, nfCloseTicket } from './nf-api.js';
 import { nfShowTicketDetailView } from './nf-ticket-detail.js';
+import { 
+    nfHandleAttachFiles, 
+    nfHandleReplyAttachmentChange, 
+    nfUpdateReplyFilePreview, 
+    nfClearReplyFilePreview 
+} from './nf-file-upload.js';
 
 // ===============================
 // REPLY INTERFACE SETUP AND MANAGEMENT
@@ -47,13 +53,20 @@ function nfSetupReplyInterface() {
     // ===============================
     // REPLY BOX BUTTON EVENT HANDLERS
     // ===============================
-    // Setup for send and cancel buttons in the reply box
+    // Setup for send, attach, and cancel buttons in the reply box
     let replyBtn = nf.ticketDetailReplyBox.querySelector('#nf_ticketdetail_replybtn');
+    let attachBtn = nf.ticketDetailReplyBox.querySelector('#nf_ticketdetail_attachbtn');
     let cancelBtn = nf.ticketDetailReplyBox.querySelector('#nf_ticketdetail_replycancel');
     
     // Assign event handlers for reply functionality
     if (replyBtn) replyBtn.onclick = nfHandleReplySend;       // Send button
+    if (attachBtn) attachBtn.onclick = nfHandleAttachFiles;   // Attach files button
     if (cancelBtn) cancelBtn.onclick = nfHandleReplyCancel;   // Cancel button
+    
+    // Setup file input change handler
+    if (nf.ticketDetailAttachment) {
+        nf.ticketDetailAttachment.onchange = nfHandleReplyAttachmentChange;
+    }
 }
 
 // ===============================
@@ -76,7 +89,8 @@ async function nfHandleReplySend() {
         // API CALL FOR REPLY
         // ===============================
         const ticketId = nf.ticketDetailContainer.getAttribute('data-ticket-id');
-        await nfSendReply(ticketId, text);
+        const files = nf.ticketDetailAttachment?.files || null;
+        await nfSendReply(ticketId, text, files);
         // ===============================
         // CACHE INVALIDATION
         // ===============================
@@ -92,6 +106,7 @@ async function nfHandleReplySend() {
         // ===============================
         nfShowStatus('Reply sent!', 'success', 'ticketdetail');
         nf.ticketDetailReplyInput.value = '';
+        nfClearReplyFilePreview();  // Clear attachments
         nf.ticketDetailReplyBox.classList.remove('nf-active');
         nf.ticketDetailReplyBox.style.display = 'none';
         // ===============================
@@ -130,6 +145,12 @@ function nfHandleReplyCancel() {
     // ===============================
     nf.ticketDetailReplyBox.classList.remove('nf-active');
     nf.ticketDetailReplyBox.style.display = 'none';
+    
+    // ===============================
+    // CLEAR ATTACHMENTS
+    // ===============================
+    nfClearReplyFilePreview();
+    
     // ===============================
     // SHOW TOGGLE BUTTON AGAIN
     // ===============================
@@ -185,4 +206,7 @@ async function nfHandleCloseTicket() {
     }
 }
 
-export { nfHandleCloseTicket, nfSetupReplyInterface };
+// ===============================
+// EXPORTS
+// ===============================
+export { nfSetupReplyInterface, nfHandleCloseTicket };

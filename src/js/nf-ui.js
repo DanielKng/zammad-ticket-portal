@@ -4,6 +4,7 @@ import { nfShow, nfHide } from './nf-helpers.js';
 import { nfSetLoading } from './nf-helpers.js';
 import { nfShowStatus, nfClearLoginStatus, nfShowPersistentLoginHint, nfClearPersistentLoginHint } from './nf-status.js';
 import { nfAuthenticateUser } from './nf-api.js';
+import { nfLang } from './nf-lang.js';
 import nfModal from './nf-modal.js';
 
 // Author: Daniel Könning
@@ -62,7 +63,7 @@ function nfShowStart() {
  * Implements layered modal system with blur effect
  */
 function nfShowTicketList() {
-    console.log('[DEBUG] nfShowTicketList called');
+    window.nfLogger.debug('nfShowTicketList called');
     
     // Show/hide elements first
     nfShow(nf.start);                 // Show main menu in background
@@ -161,8 +162,8 @@ function showAttemptsWarning() {
     const maxAttempts = NF_CONFIG.ui.login.maxAttempts;
     const remaining = maxAttempts - nf._loginAttempts;
     if (remaining > 0) {
-        const attemptsTemplate = NF_CONFIG.ui.login.attemptsWarningTemplate;
-        const warningMessage = attemptsTemplate.replace('{remaining}', remaining);
+        const baseMessage = nfLang.getLabel('loginErrors.invalidCredentials');
+        const warningMessage = `${baseMessage} (${remaining} attempts remaining)`;
         nfShowStatus(warningMessage, 'warning', 'login');
     }
 }

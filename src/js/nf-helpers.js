@@ -28,19 +28,31 @@ function nfStateLabel(stateId) {
     const states = window.nfLang.getSystemData('ticketStates');
     return states[stateId] || window.nfLang.getLabel('unknownStatus');
 }
+
+// ===============================
+// HTML CLEANING HELPER FUNCTIONS
+// ===============================
+
 /**
- * Converts a file to a Base64 string for API uploads
- * @param {File} file - The file object
- * @returns {Promise<string>} Base64 string
+ * Checks if a CSS style property is allowed
+ * @param {string} style - CSS style property to check
+ * @param {Array} allowedStyles - Array of allowed style properties
+ * @returns {boolean} True if style is allowed
  */
-function nfFileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = error => reject(error);
-    });
+function isAllowedStyle(style, allowedStyles) {
+    return allowedStyles.some(allowed => style.trim().startsWith(allowed));
 }
 
-export { nfShow, nfHide, nfSetLoading, nfStateLabel };
+/**
+ * Checks if a CSS style contains problematic colors
+ * @param {string} style - CSS style to check
+ * @param {Array} problematicColors - Array of problematic color values
+ * @returns {boolean} True if style contains problematic colors
+ */
+function hasProblematicColor(style, problematicColors) {
+    return problematicColors.some(color => style.includes(color));
+}
+
+export { nfShow, nfHide, nfSetLoading, nfStateLabel, isAllowedStyle, hasProblematicColor };
 // Status/message display logic moved to nf-status.js
+// File handling logic moved to nf-file-upload.js

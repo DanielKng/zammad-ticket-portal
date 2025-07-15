@@ -58,6 +58,10 @@ const nf = {
     ticketDetailReplyBox: document.getElementById('nf_ticketdetail_replybox'),   // Container for reply input
     ticketDetailReplyInput: document.getElementById('nf_ticketdetail_replyinput'), // Text field for new reply
     ticketDetailReplyBtn: document.getElementById('nf_ticketdetail_replybtn'),   // Button "Send reply"
+    ticketDetailAttachBtn: document.getElementById('nf_ticketdetail_attachbtn'), // Button "Attach files"
+    ticketDetailAttachment: document.getElementById('nf_ticketdetail_attachment'), // File input for reply attachments
+    ticketDetailFilePreview: document.getElementById('nf_ticketdetail_filepreview'), // Container for reply file preview
+    ticketDetailFilePreviewList: document.getElementById('nf_ticketdetail_filepreview_list'), // List of reply file previews
     btnBackList: document.getElementById('nf_btn_back_list'),                    // Back button to ticket list
 
     // ===============================

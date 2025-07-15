@@ -126,9 +126,13 @@ const NF_CONFIG = {
             'image/jpeg', 'image/png', 'image/gif', 'image/webp',
             'application/pdf', 'text/plain',
             'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            // Email attachments (enabled via emailAttachmentsAllowed)
+            'message/rfc822',  // .eml files
+            'application/vnd.ms-outlook'  // .msg files
         ],
         imageExtensions: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'],
+        emailAttachmentsAllowed: true,  // Allow email attachments (eml files)
         sessionTimeout: 30 * 60 * 1000  // 30 minutes
     },
 
