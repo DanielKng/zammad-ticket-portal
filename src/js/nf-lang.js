@@ -1,26 +1,38 @@
-// Author: Daniel Könning
-// ===============================
-// nf-lang.js - Language management system
-// ===============================
-// This module handles loading and switching between different languages
-// for the ticket frontend. It provides a centralized way to manage
-// internationalization (i18n) across the application.
+/**
+ * @fileoverview Language management system for internationalization
+ * @author Daniel Könning
+ * @module NFLang
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
 
 import { NF_CONFIG } from './nf-config.js';
 
 /**
- * Language manager for the ticket frontend
- * Handles loading language files and providing translations
+ * Language manager for the ticket frontend.
+ * Handles loading language files and providing translations with caching support.
+ * 
+ * @class NFLanguageManager
  */
 class NFLanguageManager {
+    /**
+     * Creates a new language manager instance with configuration from NF_CONFIG
+     * @constructor
+     */
     constructor() {
-        // Get all language settings from NF_CONFIG - NO FALLBACKS!
+        /** @type {Object} Language configuration from NF_CONFIG */
         this.config = NF_CONFIG.language;
+        /** @type {string} Currently active language code */
         this.currentLanguage = NF_CONFIG.language.current;
+        /** @type {Object} Loaded language objects storage */
         this.languages = {};
+        /** @type {string} Default fallback language code */
         this.defaultLanguage = NF_CONFIG.language.default;
+        /** @type {Array<string>} Array of supported language codes */
         this.supportedLanguages = Object.keys(NF_CONFIG.language.supported);
+        /** @type {string} Base path for language files */
         this.basePath = NF_CONFIG.language.basePath;
+        /** @type {Map} Cache for language data */
         this.cache = new Map();
     }
 

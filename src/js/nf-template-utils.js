@@ -1,11 +1,24 @@
-// nf-template-utils.js - Safe template cloning
-// Author: Daniel Könning
+/**
+ * @fileoverview Safe template cloning utilities
+ * @author Daniel Könning
+ * @module NFTemplateUtils
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
 
 /**
  * Safely clones a template element by selector or reference.
- * Returns a deep clone or null if template is missing.
- * @param {string|HTMLElement} template - CSS selector or template element
- * @returns {HTMLElement|null} Cloned template or null
+ * Supports both HTMLTemplateElement and regular HTML elements.
+ * 
+ * @param {string|HTMLElement} template - CSS selector string or template element reference
+ * @returns {HTMLElement|null} Deep-cloned template element or null if template is missing
+ * @example
+ * // Clone by selector
+ * const clone = nfCloneTemplate('#my-template');
+ * 
+ * // Clone by element reference
+ * const template = document.getElementById('my-template');
+ * const clone = nfCloneTemplate(template);
  */
 export function nfCloneTemplate(template) {
     let tpl = template;

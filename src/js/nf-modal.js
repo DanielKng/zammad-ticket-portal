@@ -1,7 +1,17 @@
-// nf-modal.js - Centralized modal logic
-// Handles open, close, blur, and focus trap for all modals
-// Author: Daniel Könning
+/**
+ * @fileoverview Centralized modal logic for dialog management
+ * @author Daniel Könning
+ * @module NFModal
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
 
+/**
+ * Modal management object providing centralized modal functionality.
+ * Handles opening, closing, blur effects, focus trapping, and accessibility.
+ * 
+ * @namespace nfModal
+ */
 const nfModal = {
     /**
      * Opens a modal by element or ID

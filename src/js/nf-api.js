@@ -1,18 +1,14 @@
+/**
+ * @fileoverview API communication and authentication with Zammad
+ * @author Daniel Könning
+ * @module NFApi
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
+
 import { nfApiFetch, nfApiGet, nfApiPost, nfApiPut } from './nf-api-utils.js';
 import { ZAMMAD_API_URL, nf } from './nf-dom.js';
 import { nfFileToBase64 } from './nf-file-upload.js';
-
-// Author: Daniel Könning
-// ===============================
-// nf-api.js - API communication and authentication with Zammad
-// ===============================
-// This file contains all functions for communication with the Zammad API.
-// It manages authentication, ticket CRUD operations, caching, and error handling.
-// All API calls are asynchronous and use the modern fetch() API with retry mechanism.
-
-// ===============================
-// USER AUTHENTICATION
-// ===============================
 
 /**
  * Authenticates a user against the Zammad API and stores the credentials
@@ -23,20 +19,16 @@ import { nfFileToBase64 } from './nf-file-upload.js';
  * @returns {Promise<Object>} User data object from Zammad or throws error
  */
 async function nfAuthenticateUser(username, password) {
-    // Performance measurement start (with fallback)
     if (typeof nfPerf !== 'undefined' && window.NF_CONFIG?.debug?.enabled) {
         nfPerf.mark('auth-start');
     }
     
     try {
-        // ===============================
-        // INPUT VALIDATION
-        // ===============================
-        const cleanUsername = username.trim();  // Remove whitespace from start/end
-        const cleanPassword = password.trim();  // Remove whitespace from start/end
+        const cleanUsername = username.trim();
+        const cleanPassword = password.trim();
         nfLogger.debug('Cleaned username', { cleanUsername });
         nfLogger.debug('Cleaned password length', { length: cleanPassword.length, masked: true });
-        // Check if both fields are filled
+        
         if (!cleanUsername || !cleanPassword) {
             nfLogger.error('Missing credentials', { cleanUsername, cleanPassword });
             const errorMessage = nfGetMessage('missingCredentials');
@@ -47,11 +39,8 @@ async function nfAuthenticateUser(username, password) {
             }
         }
         
-        // ===============================
-        // CREATE BASIC AUTH CREDENTIALS
-        // ===============================
-        const authString = `${cleanUsername}:${cleanPassword}`;  // Format: "user:pass"
-        const credentials = btoa(authString);                    // Base64 encoding for HTTP Basic Auth
+        const authString = `${cleanUsername}:${cleanPassword}`;
+        const credentials = btoa(authString);
         
         if (typeof nfLogger !== 'undefined') {
             nfLogger.info('Attempting authentication', { username: cleanUsername });
@@ -62,10 +51,6 @@ async function nfAuthenticateUser(username, password) {
             hasConfig: !!window.NF_CONFIG,
             apiUrl: ZAMMAD_API_URL()
         });
-        
-        // ===============================
-        // API CALL FOR AUTHENTICATION
-        // ===============================
         // Use /users/me endpoint to validate credentials
         nfLogger.debug('About to fetch', { url: `${ZAMMAD_API_URL()}/users/me` });
         const response = await nfApiGet(`${ZAMMAD_API_URL()}/users/me`, {
@@ -75,19 +60,12 @@ async function nfAuthenticateUser(username, password) {
             }
         });
         
-        // ===============================
-        // RESPONSE VALIDATION
-        // ===============================
         if (!response.ok) {
             if (response.status === 401) {
-                // ===============================
-                // LOGIN ATTEMPTS TRACKING
-                // ===============================
                 nf._loginAttempts++;
                 const maxAttempts = window.NF_CONFIG.ui.login.maxAttempts;
                 
                 if (nf._loginAttempts >= maxAttempts) {
-                    // Lock account after too many attempts
                     nf._isAccountLocked = true;
                     const lockoutMessage = nfGetMessage('lockoutMessage');
                     const errorMessage = lockoutMessage;
@@ -121,24 +99,13 @@ async function nfAuthenticateUser(username, password) {
             }
         }
         
-        // ===============================
-        // SUCCESSFUL AUTHENTICATION
-        // ===============================
-        const userData = await response.json();  // Parse JSON response
-        nf.userToken = credentials;              // Store Base64 credentials for further API calls
-        nf.userId = userData.id;                 // Store user ID for ticket assignment
+        const userData = await response.json();
+        nf.userToken = credentials;
+        nf.userId = userData.id;
         
-        // ===============================
-        // RESET LOGIN ATTEMPTS
-        // ===============================
-        // Reset all attempt counters on successful login
         nf._loginAttempts = 0;
         nf._isAccountLocked = false;
         
-        // ===============================
-        // OPTIONALLY STORE SESSION DATA
-        // ===============================
-        // Store session information in local storage (if NFUtils available)
         if (typeof NFUtils !== 'undefined' && NFUtils.storage) {
             NFUtils.storage.set('nf_session', {
                 userId: userData.id,
@@ -163,10 +130,6 @@ async function nfAuthenticateUser(username, password) {
     }
 }
 
-// ===============================
-// LOAD TICKET DETAILS AND MESSAGES
-// ===============================
-
 /**
  * Loads detailed information for a specific ticket including all messages/articles
  * Combines ticket data and related articles in a single object
@@ -175,12 +138,8 @@ async function nfAuthenticateUser(username, password) {
  * @returns {Promise<Object>} Ticket object with attached messages or throws error
  */
 async function nfFetchTicketDetail(ticketId) {
-    const cacheKey = `ticket_detail_${ticketId}`;  // Cache key for specific ticket
+    const cacheKey = `ticket_detail_${ticketId}`;
     
-    // ===============================
-    // CACHE CHECK (WITH FALLBACK)
-    // ===============================
-    // Check if cached ticket details are available
     if (typeof nfCache !== 'undefined') {
         const cached = nfCache.get(cacheKey);
         if (cached) {
@@ -190,7 +149,7 @@ async function nfFetchTicketDetail(ticketId) {
                 nfLogger.debug('Using cached ticket detail', { key: cacheKey, ticketId, cacheAgeSeconds });
                 nfLogger.info('Ticket detail loaded from cache', { ticketId, cacheAgeSeconds });
             }
-            return cached;  // Return cached details without API call
+            return cached;
         } else {
             if (typeof nfLogger !== 'undefined') {
                 nfLogger.debug('No cached ticket detail found, fetching from API', { key: cacheKey, ticketId });
@@ -204,54 +163,35 @@ async function nfFetchTicketDetail(ticketId) {
     }
     
     try {
-        // ===============================
-        // LOAD TICKET BASIC DATA
-        // ===============================
-        // Load the basic information of the ticket (title, status, date, etc.)
         const ticketResponse = await nfApiGet(`${ZAMMAD_API_URL()}/tickets/${ticketId}`, {
             headers: {
-                'Authorization': `Basic ${nf.userToken}`,  // Use stored credentials
+                'Authorization': `Basic ${nf.userToken}`,
                 'Content-Type': 'application/json'
             }
         });
         
         if (!ticketResponse.ok) throw new Error('Error loading ticket details');
         
-        const ticket = await ticketResponse.json();  // Parse ticket basic data
+        const ticket = await ticketResponse.json();
         
-        // ===============================
-        // LOAD TICKET ARTICLES/MESSAGES
-        // ===============================
-        // Load all articles (messages, replies, internal notes) of the ticket
         const articlesResponse = await nfApiGet(`${ZAMMAD_API_URL()}/ticket_articles/by_ticket/${ticketId}`, {
             headers: {
-                'Authorization': `Basic ${nf.userToken}`,  // Use stored credentials
+                'Authorization': `Basic ${nf.userToken}`,
                 'Content-Type': 'application/json'
             }
         });
         
         if (!articlesResponse.ok) throw new Error('Error loading ticket articles');
         
-        const articles = await articlesResponse.json();  // Parse articles array
-        ticket.articles = articles;                       // Add articles to ticket object
+        const articles = await articlesResponse.json();
+        ticket.articles = articles;
         
-        // ===============================
-        // PREPARE MESSAGES FOR DISPLAY
-        // ===============================
-        // Convert Zammad articles to a uniform format for the UI
         ticket.messages = (articles || []).map(a => ({
-            from: a.from || (a.sender_id === 1 ? 'Support' : 'User'),  // Determine sender (Support/User)
-            date: a.created_at,     // Message creation date
-            body: a.body || ''      // Message content (HTML or text)
+            from: a.from || (a.sender_id === 1 ? 'Support' : 'User'),
+            date: a.created_at,
+            body: a.body || ''
         }));
         
-        // ===============================
-        // CONDITIONAL CACHE TICKET DETAILS
-        // ===============================
-        // Cache strategy based on ticket age and state:
-        // - Active current year tickets: cache for 15 minutes (refreshable)
-        // - Closed current year tickets: cache for 4 hours (recent, might get updates)
-        // - Archived tickets (previous years): cache for 30 days (stable, rarely change)
         if (typeof nfCache !== 'undefined') {
             const ticketYear = new Date(ticket.created_at).getFullYear();
             const currentYear = new Date().getFullYear();
@@ -321,10 +261,6 @@ async function nfFetchTicketDetail(ticketId) {
     }
 }
 
-// ===============================
-// CREATE NEW TICKET
-// ===============================
-
 /**
  * Creates a new ticket in Zammad with optional file attachments
  * Automatically converts files to Base64 for API upload
@@ -336,14 +272,8 @@ async function nfFetchTicketDetail(ticketId) {
  */
 async function nfCreateTicket(subject, body, files) {
     try {
-        // ===============================
-        // INPUT VALIDATION
-        // ===============================
         if (!subject || !body) throw new Error('Subject and message are required');
         
-        // ===============================
-        // PROCESS FILE ATTACHMENTS
-        // ===============================
         let attachments = [];
         if (files && files.length > 0) {
             // Iterate over all selected files
@@ -357,26 +287,18 @@ async function nfCreateTicket(subject, body, files) {
             }
         }
         
-        // ===============================
-        // STRUCTURE TICKET DATA
-        // ===============================
-        // Create ticket object according to Zammad API schema
         const ticketData = {
-            title: subject,                    // Ticket title
-            group_id: window.NF_CONFIG.ui.defaultGroup,  // Default group from configuration
-            customer_id: nf.userId,           // Use ID of logged in user
-            article: {                        // First message of the ticket
-                subject: subject,             // Subject of the first message
-                body: body,                   // Content of the first message
-                type: 'web',                  // Type: web (created via web interface)
-                attachments: attachments.length > 0 ? attachments : undefined  // Attachments only if present
+            title: subject,
+            group_id: window.NF_CONFIG.ui.defaultGroup,
+            customer_id: nf.userId,
+            article: {
+                subject: subject,
+                body: body,
+                type: 'web',
+                attachments: attachments.length > 0 ? attachments : undefined
             }
         };
         
-        // ===============================
-        // API CALL TO CREATE TICKET
-        // ===============================
-        // Send POST request to Zammad API to create ticket
         const response = await nfApiPost(`${ZAMMAD_API_URL()}/tickets`, ticketData, {
             headers: {
                 'Authorization': `Basic ${nf.userToken}`,  // Use stored credentials
@@ -392,10 +314,6 @@ async function nfCreateTicket(subject, body, files) {
     }
 }
 
-// ===============================
-// SEND TICKET REPLY
-// ===============================
-
 /**
  * Sends a reply/note to an existing ticket with optional attachments
  * Distinguishes between public replies and internal notes
@@ -407,21 +325,13 @@ async function nfCreateTicket(subject, body, files) {
  */
 async function nfSendReply(ticketId, text, files) {
     try {
-        // ===============================
-        // STRUCTURE REPLY DATA
-        // ===============================
-        // Create article object for the reply
         const articleData = {
-            ticket_id: ticketId,   // ID of the ticket
-            body: text,           // Reply text
-            type: 'web',          // Type: 'web' for web interface replies
-            internal: false       // false = public reply, true = internal note
+            ticket_id: ticketId,
+            body: text,
+            type: 'web',
+            internal: false
         };
         
-        // ===============================
-        // API CALL FOR REPLY
-        // ===============================
-        // Create new article/reply via POST request to ticket_articles endpoint
         const response = await nfApiPost(`${ZAMMAD_API_URL()}/ticket_articles`, articleData, {
             headers: {
                 'Authorization': `Basic ${nf.userToken}`,  // Use stored credentials
@@ -431,10 +341,6 @@ async function nfSendReply(ticketId, text, files) {
         
         if (!response.ok) throw new Error('Error creating reply');
         
-        // ===============================
-        // PROCESS ATTACHMENTS (OPTIONAL)
-        // ===============================
-        // If files were attached, upload them separately
         if (files && files.length > 0) {
             for (const file of files) {
                 const base64Data = await nfFileToBase64(file);  // Convert file to Base64
@@ -444,13 +350,9 @@ async function nfSendReply(ticketId, text, files) {
                     'Content-Type': file.type   // MIME type of the file
                 };
                 
-                // ===============================
-                // SINGLE ATTACHMENT UPLOAD
-                // ===============================
-                // Upload each attachment separately (Zammad API requirement)
                 await nfApiPost(`${ZAMMAD_API_URL()}/ticket_attachment`, attachmentData, {
                     headers: {
-                        'Authorization': `Basic ${nf.userToken}`,  // Use stored credentials
+                        'Authorization': `Basic ${nf.userToken}`,
                         'Content-Type': 'application/json'
                     }
                 });
@@ -463,10 +365,6 @@ async function nfSendReply(ticketId, text, files) {
     }
 }
 
-// ===============================
-// CLOSE TICKET
-// ===============================
-
 /**
  * Closes a ticket by setting the status to 'Closed' (ID: 4)
  * This is a final action - closed tickets can only be reopened by administrators
@@ -476,13 +374,9 @@ async function nfSendReply(ticketId, text, files) {
  */
 async function nfCloseTicket(ticketId) {
     try {
-        // ===============================
-        // API CALL TO CLOSE TICKET
-        // ===============================
-        // Update only the status of the ticket via PUT request
         const response = await nfApiPut(`${ZAMMAD_API_URL()}/tickets/${ticketId}`, { state_id: 4 }, {
             headers: {
-                'Authorization': `Basic ${nf.userToken}`,  // Use stored credentials
+                'Authorization': `Basic ${nf.userToken}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -495,10 +389,6 @@ async function nfCloseTicket(ticketId) {
     }
 }
 
-// ===============================
-// ADVANCED TICKET FILTER FUNCTIONS
-// ===============================
-
 /**
  * Loads tickets based on filter criteria (status category, year, etc.)
  * Supports smart caching for different filter combinations
@@ -510,9 +400,6 @@ async function nfCloseTicket(ticketId) {
  * @returns {Promise<Array>} Array of filtered ticket objects
  */
 async function nfFetchTicketsFiltered(filters = {}) {
-    // ===============================
-    // PREPARE FILTER PARAMETERS
-    // ===============================
     const {
         statusCategory = window.NF_CONFIG?.ui?.filters?.defaultStatusFilter || 'active',
         year = new Date().getFullYear(),
@@ -520,19 +407,9 @@ async function nfFetchTicketsFiltered(filters = {}) {
         searchQuery = ''
     } = filters;
     
-    // ===============================
-    // GENERATE CACHE KEY
-    // ===============================
     const cacheKey = `tickets_${statusCategory}_${year}_${nf.userId}`;
     const currentYear = new Date().getFullYear();
     
-    // ===============================
-    // CONDITIONAL CACHING BASED ON YEAR AND STATUS
-    // ===============================
-    // Cache strategy:
-    // - Current year active: 15 minutes (refreshable)
-    // - Current year closed: 4 hours (recent, might get updates)
-    // - Archived (previous years): 30 days (stable)
     if (typeof nfCache !== 'undefined') {
         const cached = nfCache.get(cacheKey);
         if (cached) {
@@ -577,12 +454,8 @@ async function nfFetchTicketsFiltered(filters = {}) {
     }
     
     try {
-        // ===============================
-        // QUERY PARAMETERS FOR ZAMMAD API
-        // ===============================
         let query = `customer_id:${nf.userId}`;
         
-        // Add status filter
         const statusCategories = window.NF_CONFIG?.ui?.filters?.statusCategories;
         if (statusCategory !== 'all' && statusCategories) {
             const stateIds = statusCategories[statusCategory];
@@ -608,9 +481,6 @@ async function nfFetchTicketsFiltered(filters = {}) {
             });
         }
         
-        // ===============================
-        // API CALL WITH RETRY MECHANISM
-        // ===============================
         const baseUrl = window.NF_CONFIG?.api?.baseUrl;
         
         let response;
@@ -634,9 +504,6 @@ async function nfFetchTicketsFiltered(filters = {}) {
             });
         }
         
-        // ===============================
-        // RESPONSE VALIDATION
-        // ===============================
         if (!response.ok) {
             const errorMessage = `API error loading filtered tickets: ${response.status} ${response.statusText}`;
             if (typeof NFError !== 'undefined') {
@@ -649,9 +516,6 @@ async function nfFetchTicketsFiltered(filters = {}) {
         const result = await response.json();
         const ticketsArray = Array.isArray(result) ? result : (result.tickets || []);
         
-        // ===============================
-        // CONDITIONAL CACHING BASED ON YEAR AND STATUS
-        // ===============================
         if (typeof nfCache !== 'undefined') {
             let cacheTTL;
             let cacheDescription;

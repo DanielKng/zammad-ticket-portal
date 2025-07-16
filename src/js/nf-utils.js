@@ -1,20 +1,18 @@
-// Author: Daniel Könning
-// ===============================
-// nf-utils.js - Central utility functions and classes
-// ===============================
-// This file contains reusable helper functions, logger system,
-// error handling, localStorage wrapper, file validation, and other
-// utility functions used across the project.
+/**
+ * @fileoverview Central utility functions and classes for the ticket system
+ * @author Daniel Könning
+ * @module NFUtils
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
 
 import { isAllowedStyle, hasProblematicColor } from './nf-helpers.js';
 
-// ===============================
-// LOGGER SYSTEM FOR DEBUGGING AND MONITORING
-// ===============================
-
 /**
- * Advanced logger class for structured logging with configurable log levels
- * Supports different log levels and can be enabled/disabled for debugging
+ * Advanced logger class for structured logging with configurable log levels.
+ * Supports different log levels and can be enabled/disabled for debugging.
+ * 
+ * @class NFLogger
  */
 class NFLogger {
     /**
@@ -74,10 +72,6 @@ class NFLogger {
     error(message, data) { this.log('error', message, data); }
 }
 
-// ===============================
-// GLOBAL LOGGER INSTANCE
-// ===============================
-// Create central logger instance with config from NF_CONFIG
 let nfLogger;
 if (typeof window !== 'undefined' && window.NF_CONFIG && window.NF_CONFIG.debug) {
     nfLogger = new NFLogger({
@@ -87,10 +81,6 @@ if (typeof window !== 'undefined' && window.NF_CONFIG && window.NF_CONFIG.debug)
 } else {
     nfLogger = new NFLogger({ enabled: false, logLevel: 'info' });
 }
-
-// ===============================
-// ADVANCED ERROR CLASS FOR STRUCTURED ERROR HANDLING
-// ===============================
 
 /**
  * Advanced error class with additional metadata for better error handling
@@ -112,19 +102,11 @@ class NFError extends Error {
     }
 }
 
-// ===============================
-// UTILITY FUNCTIONS - CENTRAL HELPER LIBRARY
-// ===============================
-
 /**
  * Collection of helper functions for common operations
  * Organized in thematic groups for better clarity
  */
 const NFUtils = {
-    // ===============================
-    // HTML SANITIZATION (BASIC)
-    // ===============================
-    
     /**
      * Simple HTML sanitization to prevent XSS attacks
      * Converts HTML tags to safe text representation
@@ -137,10 +119,6 @@ const NFUtils = {
         temp.textContent = html;
         return temp.innerHTML;
     },
-    
-    // ===============================
-    // HTML CLEANING FOR SAFE DISPLAY
-    // ===============================
     
     /**
      * Cleans HTML content from unwanted inline styles and attributes
@@ -191,10 +169,6 @@ const NFUtils = {
         }
     },
 
-    // ===============================
-    // DEBOUNCE FUNCTION FOR PERFORMANCE OPTIMIZATION
-    // ===============================
-    
     /**
      * Debounce function to reduce API calls on fast user input
      * Prevents excessive search calls during typing
@@ -226,10 +200,6 @@ const NFUtils = {
         return this.debounce(func, timeout);
     },
 
-    // ===============================
-    // SAFE LOCALSTORAGE ACCESS WITH ERROR HANDLING
-    // ===============================
-    
     /**
      * Wrapper object for safe localStorage access with automatic error handling
      * Prevents crashes if storage is full or localStorage is disabled
@@ -281,10 +251,6 @@ const NFUtils = {
         }
     },
 
-    // ===============================
-    // RETRY MECHANISM FOR ROBUST API CALLS
-    // ===============================
-    
     /**
      * Retry wrapper for API calls with exponential backoff
      * Automatically retries failed requests with increasing delays
@@ -306,11 +272,6 @@ const NFUtils = {
         }
     }
 };
-
-// ===============================
-// PERFORMANCE MONITORING SYSTEM
-// ===============================
-
 /**
  * Simple performance monitoring class for measuring execution times
  * Uses the native Performance API for precise timing
@@ -361,10 +322,6 @@ class NFPerformance {
 // Global performance instance
 const nfPerf = new NFPerformance();
 
-// ===============================
-// GLOBAL AVAILABILITY OF ALL UTILITIES
-// ===============================
-// Make all classes and functions globally available for other modules
 window.NFLogger = NFLogger;
 window.NFError = NFError;
 window.NFUtils = NFUtils;
@@ -383,9 +340,6 @@ function nfGetMessage(key, placeholders = {}) {
 }
 window.nfGetMessage = nfGetMessage;
 
-// ===============================
-// LOGGER REINITIALIZATION FUNCTION
-// ===============================
 /**
  * Reinitializes the logger with current NF_CONFIG values
  * This should be called after NF_CONFIG is fully loaded

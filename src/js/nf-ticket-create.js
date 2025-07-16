@@ -1,5 +1,10 @@
-// nf-ticket-create.js - Ticket creation business logic
-// Author: Daniel Könning
+/**
+ * @fileoverview Ticket creation business logic and form handling
+ * @author Daniel Könning
+ * @module NFTicketCreate
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
 
 import { nfCreateTicket } from './nf-api.js';
 import { nfSetLoading } from './nf-helpers.js';
@@ -17,21 +22,14 @@ export async function handleNewTicketSubmit(e) {
     e.preventDefault();
     nfSetLoading(true);
     try {
-        // ===============================
-        // COLLECT FORM DATA
-        // ===============================
         const subject = nf.newTicketSubject.value.trim();
         const body = nf.newTicketBody.value.trim();
         const files = nf.newTicketAttachment.files;
-        // ===============================
-        // REQUIRED FIELD VALIDATION
-        // ===============================
+        
         if (!subject || !body) {
             throw new window.NFError(window.nfGetMessage('missingFields'), 'MISSING_FIELDS');
         }
-        // ===============================
-        // FILE VALIDATION
-        // ===============================
+        
         if (files && files.length > 0) {
             for (const file of files) {
                 try {
@@ -42,35 +40,17 @@ export async function handleNewTicketSubmit(e) {
             }
         }
         window.nfLogger.info('Creating ticket', { subject, hasFiles: files.length > 0 });
-        // ===============================
-        // API CALL TO CREATE TICKET
-        // ===============================
+        
         await nfCreateTicket(subject, body, files);
         nfShowStatus(window.nfGetMessage('ticketCreated'), 'success', 'newticket');
-        // ===============================
-        // NO CACHE INVALIDATION NEEDED
-        // ===============================
-        // Ticket lists are not cached, so no invalidation needed
-        // New tickets will appear immediately when the list is refreshed
-        // ===============================
-        // RESET FORM
-        // ===============================
+        
         nf.newTicketForm.reset();
         nfClearFilePreview();
-        // ===============================
-        // NAVIGATION AFTER SUCCESS
-        // ===============================
         nfShowStart();
     } catch (error) {
-        // ===============================
-        // ERROR HANDLING
-        // ===============================
         window.nfLogger.error('Failed to create ticket', { error: error.message });
         nfShowStatus(error.message || 'Error creating ticket', 'error', 'newticket');
     } finally {
-        // ===============================
-        // CLEANUP
-        // ===============================
         nfSetLoading(false);
     }
 }

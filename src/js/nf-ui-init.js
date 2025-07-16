@@ -1,12 +1,19 @@
+/**
+ * @fileoverview UI initialization with configuration values
+ * @author Daniel Könning
+ * @module NFUIInit
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
+
 import { NF_CONFIG } from './nf-config.js';
 
-// Author: Daniel Könning
-// ===============================
-// nf-ui-init.js - UI initialization with configuration values
-// ===============================
-// This module sets all UI texts, asset paths, and other configurable values
-// from nf-config.js into the HTML elements. All comments, section headers, and variables are in English.
-
+/**
+ * UI initialization module that sets all UI texts, asset paths, and configurable values
+ * from nf-config.js into the HTML elements.
+ * 
+ * @namespace NF_UI_INIT
+ */
 const NF_UI_INIT = {
     /**
      * Initializes all UI elements with configuration values.

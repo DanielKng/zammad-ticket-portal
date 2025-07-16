@@ -1,42 +1,62 @@
-// Author: Daniel Könning
-// ===============================
-// nf-dom.js - DOM selectors and UI references
-// ===============================
-// This file contains all DOM selectors and the global nf object.
-// It provides the foundation for all UI interactions and central
-// references to all HTML elements.
+/**
+ * @fileoverview DOM selectors and UI references for the ticket system
+ * @author Daniel Könning
+ * @module NFDom
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
 
-// ===============================
-// API CONFIGURATION
-// ===============================
-// Base URL for the Zammad API - uses config from nf-config.js if available
-// Note: Access dynamically via function to ensure NF_CONFIG is loaded
+/**
+ * Returns the base URL for the Zammad API from configuration
+ * @function ZAMMAD_API_URL
+ * @returns {string|undefined} The API base URL or undefined if config not loaded
+ */
 const ZAMMAD_API_URL = () => window.NF_CONFIG?.api?.baseUrl;
 
-// ===============================
-// GLOBAL NF OBJECT - CENTRAL STATE STORE
-// ===============================
-// The 'nf' object is the central container for all DOM references,
-// state variables, and templates. It enables unified access to all UI elements from all modules.
+/**
+ * Central DOM object containing all UI element references and application state.
+ * Provides unified access to all HTML elements and state variables across modules.
+ * 
+ * @namespace nf
+ * @property {string|null} userToken - JWT token after successful login
+ * @property {string|null} userId - Unique user ID after successful login
+ * @property {HTMLElement} trigger - Button/element to open the ticket system
+ * @property {HTMLElement} overlay - Background overlay for modal dialogs
+ * @property {HTMLElement} start - Main container for the central dialog
+ * @property {Object} templates - HTML templates for dynamic content generation
+ */
 const nf = {
-    // ===============================
-    // AUTHENTICATION STATE
-    // ===============================
+    /**
+     * Authentication state properties
+     * @namespace nf.auth
+     * @property {string|null} userToken - JWT token for API authentication
+     * @property {string|null} userId - Unique user identifier for permissions
+     */
     userToken: null, // JWT token after successful login - used for API requests
     userId: null,    // Unique user ID after successful login - for permissions
     
-    // ===============================
-    // MAIN UI ELEMENTS
-    // ===============================
-    // These elements form the basic structure of the user interface
+    /**
+     * Main UI container elements
+     * @namespace nf.ui
+     * @property {HTMLElement} trigger - Primary trigger button for opening ticket system
+     * @property {HTMLElement} overlay - Modal background overlay
+     * @property {HTMLElement} start - Main dialog container
+     */
     trigger: document.getElementById('nf-zammad-trigger'),    // Button/element to open the ticket system
     overlay: document.getElementById('nf_modal_overlay'),     // Background overlay for modal dialogs
     start: document.querySelector('.nf-modal-centerbox'),    // Main container for the central dialog
 
-    // ===============================
-    // TICKET LIST ELEMENTS (Overview page)
-    // ===============================
-    // All DOM references for the ticket overview and navigation
+    /**
+     * Ticket list view elements for overview and navigation
+     * @namespace nf.ticketList
+     * @property {HTMLElement} btnTicketCreate - Create new ticket button
+     * @property {HTMLElement} btnTicketView - View tickets button  
+     * @property {HTMLElement} ticketListContainer - Main ticket list container
+     * @property {HTMLElement} ticketListTable - Ticket display table
+     * @property {HTMLElement} ticketListBody - Table body for ticket rows
+     * @property {HTMLElement} ticketListEmpty - Empty list message element
+     * @property {HTMLElement} btnBackStart - Back to main menu button
+     */
     btnTicketCreate: document.getElementById('nf_btn_ticketcreate'), // Button "Create new ticket"
     btnTicketView: document.getElementById('nf_btn_ticketview'),     // Button "View tickets"
     ticketListContainer: document.getElementById('nf_ticketlist_container'), // Container for the complete ticket list
@@ -45,10 +65,24 @@ const nf = {
     ticketListEmpty: document.getElementById('nf_ticketlist_empty'),         // Empty list message
     btnBackStart: document.getElementById('nf_btn_back_start'),              // Back button to main menu
 
-    // ===============================
-    // TICKET DETAIL ELEMENTS (Detail view)
-    // ===============================
-    // All DOM references for the detailed ticket view
+    /**
+     * Ticket detail view elements for individual ticket display and interaction
+     * @namespace nf.ticketDetail
+     * @property {HTMLElement} ticketDetailContainer - Main ticket detail container
+     * @property {HTMLElement} ticketDetailHeader - Ticket header information area
+     * @property {HTMLElement} ticketDetailTitle - Ticket title/subject display
+     * @property {HTMLElement} ticketDetailStatus - Status indicator element
+     * @property {HTMLElement} ticketDetailMeta - Meta information container
+     * @property {HTMLElement} ticketDetailMessages - Messages/replies container
+     * @property {HTMLElement} ticketDetailReplyBox - Reply input container
+     * @property {HTMLElement} ticketDetailReplyInput - Reply text input field
+     * @property {HTMLElement} ticketDetailReplyBtn - Send reply button
+     * @property {HTMLElement} ticketDetailAttachBtn - Attach files button
+     * @property {HTMLElement} ticketDetailAttachment - File input element
+     * @property {HTMLElement} ticketDetailFilePreview - File preview container
+     * @property {HTMLElement} ticketDetailFilePreviewList - File preview list
+     * @property {HTMLElement} btnBackList - Back to ticket list button
+     */
     ticketDetailContainer: document.getElementById('nf_ticketdetail_container'), // Main container for ticket details
     ticketDetailHeader: document.getElementById('nf_ticketdetail_header'),       // Header area with ticket info
     ticketDetailTitle: document.getElementById('nf_ticketdetail_title'),         // Ticket title/subject
@@ -64,26 +98,40 @@ const nf = {
     ticketDetailFilePreviewList: document.getElementById('nf_ticketdetail_filepreview_list'), // List of reply file previews
     btnBackList: document.getElementById('nf_btn_back_list'),                    // Back button to ticket list
 
-    // ===============================
-    // STATUS & LOADER ELEMENTS (User feedback)
-    // ===============================
-    // Elements for loading indicators and status messages
+    /**
+     * Status and loader elements for user feedback
+     * @namespace nf.status
+     * @property {HTMLElement} statusMsg - General status messages container
+     * @property {HTMLElement} loader - Loading spinner animation element
+     */
     statusMsg: document.getElementById('nf_status_msg'),  // Container for general status messages
     loader: document.getElementById('nf_loader'),        // Loader/spinner animation
 
-    // ===============================
-    // FILTER & SEARCH ELEMENTS (Data filtering)
-    // ===============================
-    // UI elements for filtering and searching in the ticket list
+    /**
+     * Filter and search elements for data filtering and searching
+     * @namespace nf.filter
+     * @property {HTMLElement} filterStatus - Status filter dropdown
+     * @property {HTMLElement} sort - Sort options dropdown  
+     * @property {HTMLElement} searchInput - Search terms input field
+     * @property {HTMLElement} searchDropdown - Search suggestions dropdown
+     */
     filterStatus: document.getElementById('nf_filter_status'),    // Dropdown for status filter (open, closed, etc.)
     sort: document.getElementById('nf_sort'),                    // Dropdown for sort options (date, priority, etc.)
     searchInput: document.getElementById('nf_search_input'),     // Input field for search terms
     searchDropdown: document.getElementById('nf_search_dropdown'), // Dropdown with search suggestions/results
 
-    // ===============================
-    // LOGIN ELEMENTS (Authentication)
-    // ===============================
-    // All elements for the login dialog
+    /**
+     * Login authentication elements and state tracking
+     * @namespace nf.login
+     * @property {HTMLElement} loginContainer - Complete login dialog container
+     * @property {HTMLElement} loginForm - Login form element
+     * @property {HTMLElement} loginUser - Username/email input field
+     * @property {HTMLElement} loginPass - Password input field
+     * @property {HTMLElement} loginHint - Windows credentials hint element
+     * @property {HTMLElement} loginWarning - Login attempts warning element
+     * @property {HTMLElement} loginLockout - Account lockout message element
+     * @property {HTMLElement} loginSubmit - Login submit button
+     */
     loginContainer: document.getElementById('nf_login_container'), // Container for complete login dialog
     loginForm: document.getElementById('nf_login_form'),          // Form element for login data
     loginUser: document.getElementById('nf_login_user'),          // Input field for username/email
@@ -93,16 +141,26 @@ const nf = {
     loginLockout: document.getElementById('nf_login_lockout'),    // Lockout message
     loginSubmit: document.getElementById('nf_login_submit'),      // Submit button for login
     
-    // ===============================
-    // LOGIN ATTEMPT TRACKING
-    // ===============================
+    /**
+     * Login attempt tracking properties
+     * @namespace nf.loginState
+     * @property {number} _loginAttempts - Counter for failed login attempts
+     * @property {boolean} _isAccountLocked - Account lockout status flag
+     */
     _loginAttempts: 0,  // Counter for failed login attempts
     _isAccountLocked: false,  // Flag if account is locked
 
-    // ===============================
-    // NEW TICKET FORM (Ticket creation)
-    // ===============================
-    // All elements for creating new tickets
+    /**
+     * New ticket creation form elements
+     * @namespace nf.newTicket
+     * @property {HTMLElement} newTicketContainer - Complete ticket form container
+     * @property {HTMLElement} newTicketForm - Ticket creation form element
+     * @property {HTMLElement} newTicketSubject - Ticket subject input field
+     * @property {HTMLElement} newTicketBody - Ticket description textarea
+     * @property {HTMLElement} newTicketAttachment - File upload input
+     * @property {HTMLElement} filePreviewContainer - File preview container
+     * @property {HTMLElement} filePreviewList - File preview list element
+     */
     newTicketContainer: document.getElementById('nf_new_ticket_container'), // Container for complete ticket form
     newTicketForm: document.getElementById('nf_new_ticket_form'),           // Form element for ticket data
     newTicketSubject: document.getElementById('nf_new_ticket_subject'),     // Input field for ticket subject
@@ -111,10 +169,16 @@ const nf = {
     filePreviewContainer: document.getElementById('nf_file_preview_container'), // Container for file preview
     filePreviewList: document.getElementById('nf_file_preview_list'),       // List of file previews
 
-    // ===============================
-    // CLOSE BUTTONS (Dialog closing)
-    // ===============================
-    // All close buttons for various dialogs (X buttons & cancel buttons)
+    /**
+     * Dialog close buttons for various modal windows
+     * @namespace nf.closeButtons
+     * @property {HTMLElement} closeBtnMain - Main dialog close button
+     * @property {HTMLElement} closeBtnTicketList - Ticket list close button
+     * @property {HTMLElement} closeBtnTicketDetail - Ticket detail close button
+     * @property {HTMLElement} closeBtnLogin - Login dialog close button
+     * @property {HTMLElement} closeBtnNewTicket - New ticket dialog close button
+     * @property {HTMLElement} btnCancelNewTicket - New ticket form cancel button
+     */
     closeBtnMain: document.getElementById('nf_modal_closebtn_main'),           // X button for main dialog
     closeBtnTicketList: document.getElementById('nf_modal_closebtn_ticketlist'), // X button for ticket list
     closeBtnTicketDetail: document.getElementById('nf_modal_closebtn_ticketdetail'), // X button for ticket details
@@ -122,10 +186,14 @@ const nf = {
     closeBtnNewTicket: document.getElementById('nf_modal_closebtn_newticket'), // X button for new ticket dialog
     btnCancelNewTicket: document.getElementById('nf_btn_cancel_newticket'),    // Cancel button in ticket form
 
-    // ===============================
-    // TEMPLATES (HTML templates for dynamic content)
-    // ===============================
-    // Hidden DOM elements used as templates for dynamically generated content
+    /**
+     * HTML templates for dynamic content generation
+     * @namespace nf.templates
+     * @property {HTMLElement} ticketListRow - Template for ticket rows in list view
+     * @property {HTMLElement} ticketDetailHeader - Template for ticket detail headers
+     * @property {HTMLElement} ticketDetailMessage - Template for individual messages
+     * @property {HTMLElement} searchResult - Template for search result items
+     */
     templates: {
         ticketListRow: document.getElementById('nf_ticketlist_row_template'),       // Template for ticket row in list
         ticketDetailHeader: document.getElementById('nf_ticketdetail_header_template'), // Template for ticket detail header

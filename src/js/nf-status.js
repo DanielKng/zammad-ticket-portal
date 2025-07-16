@@ -1,10 +1,19 @@
+/**
+ * @fileoverview Centralized status and message display logic
+ * @author Daniel Könning
+ * @module NFStatus
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
+
 import { NF_CONFIG } from './nf-config.js';
 import { nf } from './nf-dom.js';
 import { nfShow, nfHide } from './nf-helpers.js';
 
-// nf-status.js - Centralized status/message display logic
-// Author: Daniel Könning
-
+/**
+ * Shows a persistent login hint message that remains until manually cleared
+ * @param {string} msg - The hint message to display
+ */
 export function nfShowPersistentLoginHint(msg) {
     // Hide all login status elements first except lockout (which should persist)
     if (nf.loginWarning) nfHide(nf.loginWarning);
@@ -17,6 +26,12 @@ export function nfShowPersistentLoginHint(msg) {
     }
 }
 
+/**
+ * Shows a status message with automatic timeout in the appropriate modal
+ * @param {string} msg - The status message to display
+ * @param {string} [type='success'] - Message type (success|error|info|warning)
+ * @param {HTMLElement} [targetModal=null] - Target modal element (auto-detected if null)
+ */
 export function nfShowStatus(msg, type = 'success', targetModal = null) {
     const duration = NF_CONFIG.ui.statusMessageDuration;
     if (!targetModal) {

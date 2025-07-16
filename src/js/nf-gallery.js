@@ -1,9 +1,10 @@
-// Author: Daniel Könning
-// ===============================
-// nf-gallery.js - Internal gallery view for attachments
-// ===============================
-// This file implements an internal gallery view for images in ticket attachments
-// with navigation between multiple images and fallback to a new tab for documents.
+/**
+ * @fileoverview Internal gallery view for ticket attachments
+ * @author Daniel Könning
+ * @module NFGallery
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
 
 import { nfApiGet, nfApiFetch } from './nf-api-utils.js';
 import { NF_CONFIG } from './nf-config.js';
@@ -11,12 +12,14 @@ import { nf } from './nf-dom.js';
 import { nfShow, nfHide, nfSetLoading } from './nf-helpers.js';
 import nfModal from './nf-modal.js';
 
-// ===============================
-// GALLERY MANAGEMENT
-// ===============================
-
-let nfGalleryImages = [];  // Array of all images in the current view
-let nfCurrentImageIndex = 0;  // Index of the currently displayed image
+/**
+ * Gallery state management variables
+ * @namespace NFGallery.state
+ * @property {Array} nfGalleryImages - Array of all images in the current view
+ * @property {number} nfCurrentImageIndex - Index of the currently displayed image
+ */
+let nfGalleryImages = [];
+let nfCurrentImageIndex = 0;
 
 /**
  * Opens the internal gallery view for an image
@@ -27,27 +30,17 @@ let nfCurrentImageIndex = 0;  // Index of the currently displayed image
  * @param {number} startIndex - Index of the image to start with
  */
 async function nfOpenGallery(imageUrl, allImages = [], startIndex = 0) {
-    // ===============================
-    // CHECK IMAGE TYPE
-    // ===============================
     if (!nfIsImageFile(imageUrl)) {
-        // Non-images open in new tab (fallback)
         window.open(imageUrl, '_blank');
         return;
     }
-    // ===============================
-    // INITIALIZE GALLERY DATA
-    // ===============================
     nfGalleryImages = allImages.filter(img => nfIsImageFile(img.url));
     nfCurrentImageIndex = nfGalleryImages.findIndex(img => img.url === imageUrl);
     if (nfCurrentImageIndex === -1) {
-        // Fallback: image not found in list
         nfCurrentImageIndex = 0;
         nfGalleryImages = [{ url: imageUrl, name: 'Attachment' }];
     }
-    // ===============================
-    // GET GALLERY ELEMENTS
-    // ===============================
+    
     const overlay = document.getElementById('nf_gallery_overlay');
     const image = document.getElementById('nf_gallery_image');
     const closeBtn = document.getElementById('nf_gallery_close');
@@ -55,21 +48,14 @@ async function nfOpenGallery(imageUrl, allImages = [], startIndex = 0) {
     const nextBtn = document.getElementById('nf_gallery_next');
     const info = document.getElementById('nf_gallery_info');
     if (!overlay || !image) {
-        // Fallback if gallery elements are not available
         window.open(imageUrl, '_blank');
         return;
     }
-    // ===============================
-    // SHOW GALLERY
-    // ===============================
     await nfDisplayCurrentImage();
     nfUpdateGalleryNavigation();
     nfShow(overlay);
     overlay.classList.add('nf-gallery-active');
     document.body.style.overflow = 'hidden';
-    // ===============================
-    // INITIALIZE EVENT LISTENERS
-    // ===============================
     nfInitializeGalleryEvents();
 }
 

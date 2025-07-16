@@ -1,3 +1,15 @@
+/**
+ * @fileoverview UI control and navigation for the tic    nfModal.open('nf_ticketlist_container');
+    
+    nfSetLoading(false);
+}
+
+/**@author Daniel Könning
+ * @module NFUI
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
+
 import { NF_CONFIG } from './nf-config.js';
 import { nf } from './nf-dom.js';
 import { nfShow, nfHide } from './nf-helpers.js';
@@ -6,17 +18,6 @@ import { nfShowStatus, nfClearLoginStatus, nfShowPersistentLoginHint, nfClearPer
 import { nfAuthenticateUser } from './nf-api.js';
 import { nfLang } from './nf-lang.js';
 import nfModal from './nf-modal.js';
-
-// Author: Daniel Könning
-// ===============================
-// nf-ui.js - UI control and navigation
-// ===============================
-// This file manages navigation between different views
-// of the ticket frontend and controls the modal system with overlays.
-
-// ===============================
-// SHOW MAIN MENU
-// ===============================
 
 /**
  * Shows the main menu (start screen) and hides all other containers
@@ -30,33 +31,18 @@ function nfShowStart() {
     nfHide(nf.loginContainer);        // Hide login form
     nfHide(nf.newTicketContainer);    // Hide new ticket form
     
-    // Show the main start content
-    nfShow(nf.start);                 // Show main menu content
+    nfShow(nf.start);
     
-    // Open the main overlay modal
     nfModal.open('nf_modal_overlay');
     
-    // ===============================
-    // EVENT HANDLER CLEANUP
-    // ===============================
-    // Clean up login handlers when login modal is closed
     nfCleanupLoginHandlers();
     
-    // Remove all blur effects using modal system
     nfModal.unblurBackground();
     
-    // ===============================
-    // DISABLE LOADER
-    // ===============================
-    // Hide loading spinner after main menu is shown
     nfSetLoading(false);
     
     window.nfLogger.debug('nfShowStart completed successfully');
 }
-
-// ===============================
-// SHOW TICKET LIST
-// ===============================
 
 /**
  * Shows the ticket list with main menu in the background
@@ -74,16 +60,8 @@ function nfShowTicketList() {
     // Open the ticket list modal (this will show it, set focus, and blur background)
     nfModal.open('nf_ticketlist_container');
     
-    // ===============================
-    // DISABLE LOADER
-    // ===============================
-    // Hide loading spinner after ticket list is shown
     nfSetLoading(false);
 }
-
-// ===============================
-// SHOW TICKET DETAILS
-// ===============================
 
 /**
  * Shows the ticket details with nested background modals
@@ -100,16 +78,8 @@ function nfShowTicketDetail() {
     // Open the ticket detail modal (this will show it, set focus, and blur background layers)
     nfModal.open('nf_ticketdetail_container');
 
-    // ===============================
-    // DISABLE LOADER
-    // ===============================
-    // Hide loading spinner after ticket details are shown
     nfSetLoading(false);
 }
-
-// ===============================
-// SHOW LOGIN FORM
-// ===============================
 
 /**
  * Shows the login form with main menu in the background
@@ -122,23 +92,11 @@ function nfShowLogin() {
     nfHide(nf.ticketDetailContainer); // Hide ticket details
     nfHide(nf.newTicketContainer);    // Hide new ticket form
 
-    // Open the login modal (this will show it, set focus, and blur background)
     nfModal.open('nf_login_container');
 
-    // ===============================
-    // MANAGE LOGIN HINTS AND STATE
-    // ===============================
     nfUpdateLoginDisplay();
-    // ===============================
-    // DISABLE LOADER
-    // ===============================
-    // Hide loading spinner after login form is shown
     nfSetLoading(false);
 }
-
-// ===============================
-// UPDATE LOGIN DISPLAY
-// ===============================
 
 /**
  * Updates the display of the login form based on the current state
@@ -183,10 +141,6 @@ function nfUpdateLoginDisplay() {
     }
 }
 
-// ===============================
-// HIDE ALL MODALS
-// ===============================
-
 /**
  * Hides all modals and overlays and resets the UI
  * Used for a complete reset of the user interface
@@ -198,15 +152,8 @@ function nfHideAll() {
     nfHide(nf.ticketDetailContainer); // Hide ticket details
     nfHide(nf.loginContainer);        // Hide login form
     nfHide(nf.newTicketContainer);    // Hide new ticket form
-    // ===============================
-    // EVENT HANDLER CLEANUP
-    // ===============================
-    // Clean up login handlers on complete close
     nfCleanupLoginHandlers();
-    // ===============================
-    // REMOVE ALL BLUR EFFECTS
-    // ===============================
-    // Remove all blur effects using modal system
+    
     nfModal.unblurBackground();
     // Focus back on trigger button
     const trigger = document.getElementById('nf-zammad-trigger');
@@ -229,10 +176,6 @@ function nfHideAll() {
     if (mainContent) mainContent.setAttribute('aria-hidden', 'false');
 }
 
-// ===============================
-// SHOW NEW TICKET FORM
-// ===============================
-
 /**
  * Shows the form for a new ticket with main menu in the background
  * Allows users to create new support requests
@@ -244,19 +187,10 @@ function nfShowNewTicket() {
     nfHide(nf.ticketDetailContainer); // Hide ticket details
     nfHide(nf.loginContainer);        // Hide login form
     
-    // Open the new ticket modal (this will show it, set focus, and blur background)
     nfModal.open('nf_new_ticket_container');
     
-    // ===============================
-    // DISABLE LOADER
-    // ===============================
-    // Hide loading spinner after form is shown
     nfSetLoading(false);
 }
-
-// ===============================
-// AUTHENTICATION REQUIRED - WRAPPER FUNCTION
-// ===============================
 
 /**
  * Ensures that the user is logged in before executing an action
@@ -305,10 +239,6 @@ function nfRequireLogin(next) {
     nf.loginForm.addEventListener('submit', handler);
 }
 
-// ===============================
-// HELPER FUNCTIONS FOR LOGIN HANDLER MANAGEMENT
-// ===============================
-
 /**
  * Cleans up all login event handlers to avoid duplicates
  * Prevents accumulation of event handlers during multiple login attempts
@@ -324,11 +254,9 @@ function nfCleanupLoginHandlers() {
 /**
  * Removes blur effect from all modal containers
  */
-
-
-// ===============================
-// RESET LOGIN STATE
-// ===============================
+function nfRemoveModalBlur() {
+    // Implementation would go here
+}
 
 /**
  * Resets the login state completely (except account locking)
