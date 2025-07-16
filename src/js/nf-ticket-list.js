@@ -1,10 +1,10 @@
-// Author: Daniel Könning
-// ===============================
-// nf-ticket-list.js - Ticket list management and display with filters
-// ===============================
-// This file contains all functions for displaying the ticket list.
-// It handles loading, formatting, filtering, and template-based display
-// of tickets in the overview list with smart caching.
+/**
+ * @fileoverview Ticket list management and display with filters
+ * @author Daniel Könning
+ * @module NFTicketList
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
 
 import { NF_CONFIG } from './nf-config.js';
 import { nf } from './nf-dom.js';
@@ -15,21 +15,20 @@ import { nfFetchTicketsFiltered } from './nf-api.js';
 import { nfShowTicketList, nfShowTicketDetail } from './nf-ui.js';
 import { nfShowTicketDetailView } from './nf-ticket-detail.js';
 
-// ===============================
-// GLOBAL FILTER VARIABLES
-// ===============================
+/**
+ * Global filter state for ticket list display
+ * @namespace NFTicketList.filters
+ * @property {string} statusCategory - Current status filter (active|closed|inactive)
+ * @property {number} year - Selected year for filtering
+ * @property {string} sortOrder - Current sort order (date_desc|date_asc|priority)
+ */
 let nfCurrentFilters = {
     statusCategory: 'active',  // Default: Only active tickets
     year: new Date().getFullYear(),
     sortOrder: 'date_desc'
 };
 
-// Track if filters have been initialized
 let nfFiltersInitialized = false;
-
-// ===============================
-// LOAD AND DISPLAY TICKET LIST
-// ===============================
 
 /**
  * Loads all user tickets based on current filters and displays them
@@ -45,35 +44,21 @@ async function nfLoadAndShowTicketList() {
     window.nfLogger.debug('nfLoadAndShowTicketList called');
     nfSetLoading(true);  // Show loading spinner during API call
     try {
-        // ===============================
-        // INITIALIZE FILTER UI (only once)
-        // ===============================
         if (!nfFiltersInitialized) {
             nfInitializeFilters();
             nfFiltersInitialized = true;
             window.nfLogger.debug('Filters initialized');
         }
-        // ===============================
-        // LOAD TICKETS FROM SERVER (FILTERED)
-        // ===============================
+        
         const tickets = await nfFetchTicketsFiltered(nfCurrentFilters);
         window.nfLogger.debug('Tickets fetched in nfLoadAndShowTicketList:', { tickets });
-        // ===============================
-        // DISPLAY TICKETS
-        // ===============================
         nfRenderTicketList(tickets);
-        // ===============================
-        // SHOW TICKET LIST
-        // ===============================
-        nfShowTicketList();  // Show the ticket list modal
+        nfShowTicketList();
     } catch (error) {
         window.nfLogger.error('Error in nfLoadAndShowTicketList:', { error });
         nfShowStatus(window.nfLang.getUtilsMessage('ticketListLoadError') + error.message, 'error', 'ticketlist');
     } finally {
-        // ===============================
-        // CLEANUP
-        // ===============================
-        nfSetLoading(false);  // Always hide loading spinner
+        nfSetLoading(false);
     }
 }
 
@@ -81,9 +66,6 @@ async function nfLoadAndShowTicketList() {
  * Initializes the filter UI elements and event listeners
  */
 function nfInitializeFilters() {
-    // ===============================
-    // GET DOM ELEMENTS
-    // ===============================
     const statusFilter = document.getElementById('nf_filter_status');
     const sortFilter = document.getElementById('nf_sort');
     const yearFilter = document.getElementById('nf_filter_year');
@@ -96,9 +78,7 @@ function nfInitializeFilters() {
         reloadBtn.setAttribute('title', reloadButtonText);
     }
     if (!statusFilter || !sortFilter || !yearFilter) return;
-    // ===============================
-    // DYNAMICALLY FILL YEAR FILTER
-    // ===============================
+    
     const availableYears = NF_CONFIG?.ui?.filters?.availableYears || [
         new Date().getFullYear(),
         new Date().getFullYear() - 1,
@@ -112,22 +92,15 @@ function nfInitializeFilters() {
         if (year === nfCurrentFilters.year) option.selected = true;
         yearFilter.appendChild(option);
     });
-    // ===============================
-    // SET FILTER DEFAULTS
-    // ===============================
+    
     statusFilter.value = nfCurrentFilters.statusCategory;
     sortFilter.value = nfCurrentFilters.sortOrder;
     // Only show year filter for closed tickets
     nfToggleYearFilter(nfCurrentFilters.statusCategory === 'closed');
-    // ===============================
-    // EVENT LISTENERS FOR FILTER CHANGES
-    // ===============================
+    
     statusFilter.addEventListener('change', nfOnStatusFilterChange);
     sortFilter.addEventListener('change', nfOnSortFilterChange);
     yearFilter.addEventListener('change', nfOnYearFilterChange);
-    // ===============================
-    // EVENT LISTENER FOR RELOAD BUTTON
-    // ===============================
     if (reloadBtn) {
         reloadBtn.addEventListener('click', async () => {
             // Log reload action with current context
@@ -147,9 +120,7 @@ function nfInitializeFilters() {
             await nfReloadTicketsWithFilters();
         });
     }
-    // ===============================
-    // SORT HEADER CLICKS
-    // ===============================
+    
     const headers = document.querySelectorAll('.nf-ticketlist-header-cell[data-sort]');
     headers.forEach(header => {
         header.style.cursor = 'pointer';
@@ -265,9 +236,7 @@ function nfStateLabel(state) {
 function nfRenderTicketList(tickets) {
     window.nfLogger.debug('nfRenderTicketList called');
     nf.ticketListBody.innerHTML = '';
-    // ===============================
-    // HANDLE EMPTY LIST
-    // ===============================
+    
     if (!tickets.length) {
         nfShow(nf.ticketListEmpty);  // Show "No tickets" message
         nf.ticketListEmpty.textContent = window.nfLang.getLabel('ticketListEmpty');
@@ -275,18 +244,12 @@ function nfRenderTicketList(tickets) {
     } else {
         nfHide(nf.ticketListEmpty);  // Hide "No tickets" message
     }
-    // ===============================
-    // TEMPLATE SYSTEM FOR TICKET ROWS
-    // ===============================
+    
     const ticketRowTemplate = nf.templates.ticketListRow;
-    // ===============================
-    // INSERT EACH TICKET INTO TABLE
-    // ===============================
+    
     tickets.forEach((t) => {
         let tr;  // Table row for current ticket
-        // ===============================
-        // TEMPLATE-BASED CREATION ONLY
-        // ===============================
+        
         if (ticketRowTemplate) {
             // Use querySelector to reliably find the <tr> inside the template
             const trTemplate = ticketRowTemplate.querySelector('tr.nf-ticketlist-row');
@@ -295,9 +258,7 @@ function nfRenderTicketList(tickets) {
                 const tempTable = document.createElement('table');
                 tempTable.innerHTML = trTemplate.outerHTML;
                 tr = tempTable.querySelector('tr');
-                // ===============================
-                // FILL TEMPLATE FIELDS
-                // ===============================
+                
                 try {
                     const idCell = tr.querySelector('.nf-ticketlist-cell--id');
                     if (idCell) idCell.textContent = t.number || t.id || '';
@@ -327,9 +288,7 @@ function nfRenderTicketList(tickets) {
             window.nfLogger.error('Ticket row template not found. Skipping ticket row rendering.');
             return;
         }
-        // ===============================
-        // CLICK HANDLER FOR TICKET DETAILS
-        // ===============================
+        
         // On row click: open ticket detail view
         tr.addEventListener('click', async (event) => {
             // Check if the click is on a link element (to prevent double handling)
@@ -355,16 +314,10 @@ function nfRenderTicketList(tickets) {
                 nfShowTicketDetail();
             });
         }
-        // ===============================
-        // ADD ROW TO TABLE
-        // ===============================
+        
         nf.ticketListBody.appendChild(tr);  // Add row to ticket table
     });
 }
-
-// ===============================
-// CACHE INVALIDATION FOR RELOAD
-// ===============================
 
 /**
  * Invalidates ticket caches based on current filter context

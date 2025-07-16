@@ -1,10 +1,10 @@
-// Author: Daniel Könning
-// ===============================
-// nf-events.js - Event handlers and DOM initialization
-// ===============================
-// This file defines all event handlers for user interactions
-// and initializes the complete event system after DOM load.
-// It extends the global nf object with event handling methods.
+/**
+ * @fileoverview Event handlers and DOM initialization for the ticket system
+ * @author Daniel Könning
+ * @module NFEvents
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
 
 import { nf } from './nf-dom.js';
 import { handleNewTicketSubmit } from './nf-ticket-create.js';
@@ -16,9 +16,11 @@ import { nfHideSearchDropdown, nfInitializeSearch } from './nf-search.js';
 import { nfLoadAndShowTicketList } from './nf-ticket-list.js';
 import { nfHandleCloseTicket } from './nf-ticket-actions.js';
 
-// ===============================
-// EXTENDED EVENT HANDLERS FOR THE NF OBJECT
-// ===============================
+/**
+ * Extended event handlers for the global nf object.
+ * These methods handle user interactions and modal navigation throughout the application.
+ * @namespace nf.eventHandlers
+ */
 Object.assign(nf, {
     /**
      * Handles closing modals via X button (event delegation)
@@ -155,27 +157,19 @@ Object.assign(nf, {
      */
     handleNewTicketSubmit: handleNewTicketSubmit,
 });
-// ===============================
-// EVENT LISTENER INITIALIZATION
-// ===============================
+
 /**
  * Initializes all event listeners for the ticket system
  * This function is called on DOM load and connects all
  * HTML elements with their corresponding event handler functions
  */
 function nfInitializeEventListeners() {
-    // ===============================
-    // MAIN TRIGGER (Open system)
-    // ===============================
     if (nf.trigger) {
         nf.trigger.addEventListener('click', () => {
             window.nfLogger.debug('Main trigger button clicked - opening ticket system');
             nfShowStart();
         });
     }
-    // ===============================
-    // MAIN MENU BUTTONS
-    // ===============================
     if (nf.btnTicketCreate) {
         nf.btnTicketCreate.addEventListener('click', () => {
             window.nfLogger.debug('Create ticket button clicked');
@@ -191,35 +185,30 @@ function nfInitializeEventListeners() {
             });
         });
     }
-    // ===============================
-    // FORM EVENT HANDLERS
-    // ===============================
+    
     if (nf.newTicketForm) {
         nf.newTicketForm.addEventListener('submit', nf.handleNewTicketSubmit);
     }
     if (nf.btnCancelNewTicket) {
         nf.btnCancelNewTicket.addEventListener('click', nf.handleCancelNewTicket);
     }
-    // File upload preview handler
+    
     if (nf.newTicketAttachment) {
         nf.newTicketAttachment.addEventListener('change', nfUpdateFilePreview);
         nfInitializeDragAndDrop();
     }
-    // TICKET ACTION BUTTONS (OPTIONAL)
+    
     const closeBtn = document.getElementById('nf_ticketdetail_closebtn');
     if (closeBtn) {
         closeBtn.onclick = nfHandleCloseTicket;
     }
-    // GLOBAL EVENT DELEGATION
+    
     document.addEventListener('click', nf.handleModalClose);
     document.addEventListener('keydown', nf.handleEscKey);
-    document.addEventListener('keydown', nf.handleModalCloseKeyboard); // Accessibility for close buttons
-    // SEARCH FUNCTIONALITY
+    document.addEventListener('keydown', nf.handleModalCloseKeyboard);
     nfInitializeSearch();
 }
-// ===============================
-// DOM READY AND MAIN INITIALIZATION
-// ===============================
+
 /**
  * Main initialization after DOM load
  * Starts the complete event system when DOM is fully loaded

@@ -1,10 +1,10 @@
-// Author: Daniel Könning
-// ===============================
-// nf-ticket-actions.js - Ticket actions and interactions
-// ===============================
-// This file contains all functions for user interactions with tickets.
-// It handles the reply interface, closing tickets, sending replies,
-// and managing the reply box.
+/**
+ * @fileoverview Ticket actions and user interactions
+ * @author Daniel Könning
+ * @module NFTicketActions
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
 
 import { nf } from './nf-dom.js';
 import { nfSetLoading } from './nf-helpers.js';
@@ -19,41 +19,24 @@ import {
     nfClearReplyFilePreview 
 } from './nf-file-upload.js';
 
-// ===============================
-// REPLY INTERFACE SETUP AND MANAGEMENT
-// ===============================
-
 /**
  * Sets up the reply user interface for ticket replies
  * Creates toggle button, configures reply box, and sets event handlers
  */
 function nfSetupReplyInterface() {
-    // ===============================
-    // REPLY TOGGLE BUTTON SETUP
-    // ===============================
     let replyToggle = document.getElementById('nf_ticketdetail_replytoggle');
     
-    // ===============================
-    // INITIAL STATE
-    // ===============================
-    replyToggle.style.display = '';                           // Show toggle button
-    nf.ticketDetailReplyBox.classList.remove('nf-active');    // Remove active class from reply box
-    nf.ticketDetailReplyBox.style.display = 'none';           // Hide reply box initially
+    replyToggle.style.display = '';
+    nf.ticketDetailReplyBox.classList.remove('nf-active');
+    nf.ticketDetailReplyBox.style.display = 'none';
     
-    // ===============================
-    // TOGGLE BUTTON EVENT HANDLER
-    // ===============================
     replyToggle.onclick = function() {
-        replyToggle.style.display = 'none';                   // Hide toggle button
-        nf.ticketDetailReplyBox.classList.add('nf-active');   // Visually activate reply box
-        nf.ticketDetailReplyBox.style.display = '';           // Show reply box
-        nf.ticketDetailReplyInput.focus();                    // Set focus on input field
+        replyToggle.style.display = 'none';
+        nf.ticketDetailReplyBox.classList.add('nf-active');
+        nf.ticketDetailReplyBox.style.display = '';
+        nf.ticketDetailReplyInput.focus();
     };
     
-    // ===============================
-    // REPLY BOX BUTTON EVENT HANDLERS
-    // ===============================
-    // Setup for send, attach, and cancel buttons in the reply box
     let replyBtn = nf.ticketDetailReplyBox.querySelector('#nf_ticketdetail_replybtn');
     let attachBtn = nf.ticketDetailReplyBox.querySelector('#nf_ticketdetail_attachbtn');
     let cancelBtn = nf.ticketDetailReplyBox.querySelector('#nf_ticketdetail_replycancel');
@@ -69,144 +52,76 @@ function nfSetupReplyInterface() {
     }
 }
 
-// ===============================
-// TICKET REPLY SENDING AND PROCESSING
-// ===============================
-
 /**
  * Sends a reply in the ticket detail via the reply box
  * Validates input, sends API request, and updates the view
  */
 async function nfHandleReplySend() {
-    // ===============================
-    // INPUT VALIDATION
-    // ===============================
     const text = nf.ticketDetailReplyInput.value.trim();
     if (!text) return;
     nfSetLoading(true);
     try {
-        // ===============================
-        // API CALL FOR REPLY
-        // ===============================
         const ticketId = nf.ticketDetailContainer.getAttribute('data-ticket-id');
         const files = nf.ticketDetailAttachment?.files || null;
         await nfSendReply(ticketId, text, files);
-        // ===============================
-        // CACHE INVALIDATION
-        // ===============================
-        // Invalidate cache for this ticket so the new reply is visible on reload
         if (typeof window.nfCache !== 'undefined') {
             window.nfCache.invalidate(`ticket_detail_${ticketId}`);
             if (typeof window.nfLogger !== 'undefined') {
                 window.nfLogger.debug('Ticket detail cache invalidated after reply', { ticketId });
             }
         }
-        // ===============================
-        // SUCCESS FEEDBACK AND UI RESET
-        // ===============================
         nfShowStatus('Reply sent!', 'success', 'ticketdetail');
         nf.ticketDetailReplyInput.value = '';
-        nfClearReplyFilePreview();  // Clear attachments
+        nfClearReplyFilePreview();
         nf.ticketDetailReplyBox.classList.remove('nf-active');
         nf.ticketDetailReplyBox.style.display = 'none';
-        // ===============================
-        // SHOW TOGGLE BUTTON AGAIN
-        // ===============================
         const replyToggle = document.getElementById('nf_ticketdetail_replytoggle');
         if (replyToggle) replyToggle.style.display = '';
-        // ===============================
-        // UPDATE TICKET VIEW
-        // ===============================
         await nfShowTicketDetailView(ticketId);
     } catch (err) {
-        // ===============================
-        // ERROR HANDLING
-        // ===============================
         nfShowStatus('Error sending reply: ' + err.message, 'error', 'ticketdetail');
     } finally {
-        // ===============================
-        // CLEANUP
-        // ===============================
         nfSetLoading(false);
     }
 }
-
-// ===============================
-// REPLY CANCEL AND UI RESET
-// ===============================
 
 /**
  * Cancels the reply in the ticket detail and resets the UI
  * Hides reply box and shows the "Reply" toggle button again
  */
 function nfHandleReplyCancel() {
-    // ===============================
-    // DEACTIVATE REPLY BOX
-    // ===============================
     nf.ticketDetailReplyBox.classList.remove('nf-active');
     nf.ticketDetailReplyBox.style.display = 'none';
     
-    // ===============================
-    // CLEAR ATTACHMENTS
-    // ===============================
     nfClearReplyFilePreview();
     
-    // ===============================
-    // SHOW TOGGLE BUTTON AGAIN
-    // ===============================
     const replyToggle = document.getElementById('nf_ticketdetail_replytoggle');
     if (replyToggle) replyToggle.style.display = '';
 }
-
-// ===============================
-// CLOSE TICKET AND CHANGE STATUS
-// ===============================
 
 /**
  * Closes a ticket by setting its status to 'Closed'
  * Executes API call and updates the user interface
  */
 async function nfHandleCloseTicket() {
-    // ===============================
-    // TICKET ID VALIDATION
-    // ===============================
     const ticketId = nf.ticketDetailContainer.getAttribute('data-ticket-id');
     if (!ticketId) return;
     nfSetLoading(true);
     try {
-        // ===============================
-        // API CALL TO CLOSE
-        // ===============================
         await nfCloseTicket(ticketId);
-        // ===============================
-        // CACHE INVALIDATION
-        // ===============================
-        // Invalidate ticket details cache (lists are not cached)
         if (typeof window.nfCache !== 'undefined') {
             window.nfCache.invalidate(`ticket_detail_${ticketId}`);
             if (typeof window.nfLogger !== 'undefined') {
                 window.nfLogger.debug('Ticket detail cache invalidated after ticket close', { ticketId });
             }
         }
-        // ===============================
-        // SUCCESS FEEDBACK AND NAVIGATION
-        // ===============================
         nfShowStatus('Ticket marked as resolved.', 'success', 'ticketdetail');
         nfShowTicketList();
     } catch (err) {
-        // ===============================
-        // ERROR HANDLING
-        // ===============================
         nfShowStatus('Error marking as resolved: ' + err.message, 'error', 'ticketdetail');
     } finally {
-        // ===============================
-        // CLEANUP
-        // ===============================
         nfSetLoading(false);
     }
 }
 
-// ===============================
-// EXPORTS
-// ===============================
 export { nfSetupReplyInterface, nfHandleCloseTicket };

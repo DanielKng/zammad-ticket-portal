@@ -1,22 +1,14 @@
+/**
+ * @fileoverview Complete file handling system for ticket attachments
+ * @author Daniel Könning
+ * @module NFFileUpload
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
+
 import { nf } from './nf-dom.js';
 import { NF_CONFIG } from './nf-config.js';
 import { nfShowStatus } from './nf-status.js';
-
-// ===============================
-// nf-file-upload.js - Complete file handling system
-// Author: Daniel Könning
-// ===============================
-// This file handles ALL file-related functionality:
-// - File validation (types, sizes, email attachments)
-// - File preview and thumbnails
-// - Drag and drop functionality
-// - File conversion (Base64)
-// - File size formatting
-// ===============================
-
-// ===============================
-// FILE CONVERSION UTILITIES
-// ===============================
 
 /**
  * Converts a file to a Base64 string for API uploads
@@ -44,10 +36,6 @@ export function nfFormatFileSize(bytes) {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
-
-// ===============================
-// FILE VALIDATION
-// ===============================
 
 /**
  * Validates if a file type is allowed based on configuration
@@ -108,10 +96,6 @@ export function nfValidateFile(file) {
     
     return true;
 }
-
-// ===============================
-// FILE PREVIEW FUNCTIONALITY
-// ===============================
 
 /**
  * Creates a file preview item using the template
@@ -180,10 +164,6 @@ export function nfCreateFilePreviewItem(file, index, removeCallback) {
     return previewItem;
 }
 
-// ===============================
-// NEW TICKET FILE PREVIEW
-// ===============================
-
 /**
  * Updates the file preview for new ticket creation
  */
@@ -237,11 +217,6 @@ export function nfClearFilePreview() {
     if (nf.filePreviewContainer) nf.filePreviewContainer.style.display = 'none';
     if (nf.newTicketAttachment) nf.newTicketAttachment.value = '';
 }
-
-// ===============================
-// REPLY FILE PREVIEW
-// ===============================
-
 /**
  * Updates the file preview for reply attachments
  */
@@ -296,10 +271,6 @@ export function nfClearReplyFilePreview() {
     if (nf.ticketDetailAttachment) nf.ticketDetailAttachment.value = '';
 }
 
-// ===============================
-// DRAG AND DROP FUNCTIONALITY
-// ===============================
-
 /**
  * Initializes drag and drop functionality for new ticket creation
  */
@@ -338,10 +309,6 @@ export function nfInitializeDragAndDrop() {
         nfUpdateFilePreview();
     }, false);
 }
-
-// ===============================
-// ATTACHMENT BUTTON HANDLERS
-// ===============================
 
 /**
  * Handles the attachment button click for replies

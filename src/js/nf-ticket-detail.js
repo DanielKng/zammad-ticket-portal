@@ -1,10 +1,10 @@
-// Author: Daniel Könning
-// ===============================
-// nf-ticket-detail.js - Ticket detail view and message display
-// ===============================
-// This file contains all functions for the detailed ticket view.
-// It handles loading and displaying ticket details, message history,
-// header information, and email content processing.
+/**
+ * @fileoverview Ticket detail view and message display functionality
+ * @author Daniel Könning
+ * @module NFTicketDetail
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
 
 import { nfApiGet } from './nf-api-utils.js';
 import { nfFetchTicketDetail } from './nf-api.js';
@@ -16,10 +16,6 @@ import { nfShowStatus } from './nf-status.js';
 import { nfShowTicketDetail } from './nf-ui.js';
 import { nfSetupReplyInterface } from './nf-ticket-actions.js';
 import { nfIsImageFile, nfOpenGalleryForAttachment } from './nf-gallery.js';
-
-// ===============================
-// TICKET-DETAIL-ANSICHT ANZEIGEN
-// ===============================
 
 /**
  * Loads and shows the detailed view of a specific ticket
@@ -83,9 +79,7 @@ async function nfShowTicketDetailView(ticketId) {
                 agentName = '';
             }
         }
-        // ===============================
-        // CREATE HEADER WITH TEMPLATE
-        // ===============================
+        
         if (headerTemplate && headerTemplate.firstElementChild) {
             headerCard = nfCloneTemplate(headerTemplate.firstElementChild, 'div');
             window.nfLogger.debug('Cloned headerCard', { headerCard });
@@ -115,39 +109,25 @@ async function nfShowTicketDetailView(ticketId) {
             nfShowStatus('Ticket header template missing. Please check your HTML templates.', 'error', 'ticketdetail');
             return;
         }
-        // ===============================
-        // ADD HEADER TO DOM
-        // ===============================
+        
         window.nfLogger.debug('Appending headerCard to ticketDetailHeader', { headerCard });
         nf.ticketDetailHeader.appendChild(headerCard);
-        // ===============================
-        // PREPARE MESSAGES AREA
-        // ===============================
+        
         window.nfLogger.debug('Clearing ticketDetailMessages');
         nf.ticketDetailMessages.innerHTML = '';
         // Debug: msgTemplate
         window.nfLogger.debug('msgTemplate:', { msgTemplate });
-        // ===============================
-        // ARTICLE FILTERING FOR USER VIEW
-        // ===============================
+        
         // Only show relevant messages for the end user (no internal notes, etc.)
         window.nfLogger.debug('Filtering articles', { articles: ticket.articles });
         const visibleArticles = (ticket.articles || []).filter(a => {
-            // ===============================
-            // HIDE INTERNAL NOTES
-            // ===============================
+            
             // Internal notes are only visible to support team
             if (a.type === 'note' && a.internal === true) return false;
             
-            // ===============================
-            // HIDE SYSTEM MESSAGES
-            // ===============================
             // System-generated messages are not relevant for end users
             if (a.sender === 'System') return false;
             
-            // ===============================
-            // HIDE AUTOMATIC SYSTEM EMAILS
-            // ===============================
             // Specific filter for system emails
             const supportEmail = NF_CONFIG?.system?.supportEmail;
             const systemEmailFilter = NF_CONFIG?.system?.assets?.systemEmailFilter || [];
@@ -156,17 +136,11 @@ async function nfShowTicketDetailView(ticketId) {
                 return false;
             }
             
-            // ===============================
-            // ALWAYS SHOW USER EMAILS
-            // ===============================
             // All emails from the customer are relevant (even with automatic subjects)
             if (a.type === 'email' && a.sender === 'Customer') {
                 return true;
             }
             
-            // ===============================
-            // HIDE AUTOMATIC NOTIFICATIONS
-            // ===============================
             // Detect and filter automatic system notifications by subject
             if (a.subject && a.sender !== 'Customer') {
                 const systemSubjects = [
@@ -183,19 +157,11 @@ async function nfShowTicketDetailView(ticketId) {
                 }
             }
             
-            // ===============================
-            // SHOW BY DEFAULT
-            // ===============================
             return true;  // Show all other articles
         });
         
-        // ===============================
-        // MESSAGE DISPLAY
-        // ===============================
         // Get template for message display
-        // ===============================
-        // RENDER EACH VISIBLE MESSAGE
-        // ===============================
+        
         visibleArticles.forEach(article => {
             window.nfLogger.debug('Rendering article', { article });
             let msgDiv;
@@ -231,9 +197,7 @@ async function nfShowTicketDetailView(ticketId) {
             nf.ticketDetailMessages.appendChild(msgDiv);
         });
         
-        // ===============================
-        // AUTO-SCROLL TO LATEST MESSAGES
-        // ===============================
+
         // Automatically scroll to the end of the message list
         // With a short delay to ensure all content is loaded
         setTimeout(() => {
@@ -243,30 +207,18 @@ async function nfShowTicketDetailView(ticketId) {
         setTimeout(() => {
             nf.ticketDetailMessages.scrollTop = nf.ticketDetailMessages.scrollHeight;
         }, 500);
-        // ===============================
-        // INITIALIZE REPLY INTERFACE
-        // ===============================
+        
         nfSetupReplyInterface();  // Setup for reply functionality
-        // ===============================
-        // SHOW TICKET DETAIL MODAL
-        // ===============================
+        
         nfShowTicketDetail();  // Show the detail modal
     } catch (err) {
-        // ===============================
-        // ERROR HANDLING
-        // ===============================
+        
         nfShowStatus('Error loading ticket: ' + err.message, 'error', 'ticketdetail');
     } finally {
-        // ===============================
-        // CLEANUP
-        // ===============================
+        
         nfSetLoading(false);
     }
 }
-
-// ===============================
-// MESSAGE DISPLAY HELPER FUNCTIONS
-// ===============================
 
 /**
  * Extracts the actual content from email messages
@@ -302,27 +254,16 @@ function cleanLines(lines) {
 }
 
 function nfExtractEmailContent(body, isUserEmail = false) {
-    // ===============================
-    // BASIC VALIDATION
-    // ===============================
+    
     if (!body || typeof body !== 'string') return body;  // Return if not valid content
     
-    // ===============================
-    // CLEANUP ONLY FOR USER EMAILS
-    // ===============================
     // Only clean up for user emails (not agent messages)
     if (!isUserEmail) return body;
     
-    // ===============================
-    // HTML TO TEXT CONVERSION
-    // ===============================
     // Create temporary DOM element for HTML processing
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = body;  // Parse HTML content
     
-    // ===============================
-    // REMOVE HR ELEMENTS AND FOLLOWING CONTENT
-    // ===============================
     // <hr> elements often mark signature start in emails
     const hrElements = tempDiv.querySelectorAll('hr');
     hrElements.forEach(hr => {
@@ -341,9 +282,6 @@ function nfExtractEmailContent(body, isUserEmail = false) {
         }
     });
     
-    // ===============================
-    // REMOVE SIGNATURE MARKERS
-    // ===============================
     // Remove elements with signature-specific CSS classes
     const signatureMarkers = tempDiv.querySelectorAll('.js-signatureMarker, [class*="signature"]');
     signatureMarkers.forEach(marker => {
@@ -358,17 +296,11 @@ function nfExtractEmailContent(body, isUserEmail = false) {
         }
     });
     
-    // ===============================
-    // TEXT EXTRACTION AND NORMALIZATION
-    // ===============================
     let textContent = tempDiv.textContent || tempDiv.innerText || '';
     
     // Remove excessive spaces and line breaks for better readability
     textContent = textContent.replace(/\s+/g, ' ').trim();
     
-    // ===============================
-    // EMAIL SEPARATORS AND MARKERS
-    // ===============================
     // Get email separators for further cleanup from config, or use default English set
     const separators = NF_CONFIG?.system?.emailSeparators || [
         'From:',          // English email header
@@ -381,9 +313,6 @@ function nfExtractEmailContent(body, isUserEmail = false) {
         'Phone:'
     ];
     
-    // ===============================
-    // CUT CONTENT AT FIRST SEPARATOR
-    // ===============================
     // Find the first separator and cut everything after
     let cleanContent = textContent;
     let cutPosition = findFirstSeparator(textContent, separators);
@@ -398,10 +327,6 @@ function nfExtractEmailContent(body, isUserEmail = false) {
     return result || body;
 }
 
-// ===============================
-// LOAD AND MANAGE USER INFORMATION
-// ===============================
-
 /**
  * Fetches the name of a user by user ID from the Zammad API
  * Used to display agent names in ticket details
@@ -410,29 +335,18 @@ function nfExtractEmailContent(body, isUserEmail = false) {
  * @returns {Promise<string>} Full name or fallback value
  */
 async function nfFetchUserNameById(userId) {
-    // ===============================
-    // API REQUEST CONFIGURATION
-    // ===============================
+    
     // Construct URL for Zammad User API
     const url = `${NF_CONFIG?.api?.baseUrl}/users/${userId}`;
     
-    // ===============================
-    // AUTHENTICATED API CALL
-    // ===============================
     const response = await nfApiGet(url, {
         headers: {
             'Authorization': `Basic ${nf.userToken}`  // Use stored authentication
         }
     });
     
-    // ===============================
-    // RESPONSE VALIDATION
-    // ===============================
     if (!response.ok) throw new Error('User not found');  // Error if user does not exist
     
-    // ===============================
-    // USER DATA PROCESSING AND NAME EXTRACTION
-    // ===============================
     const data = await response.json();  // Parse JSON response
     
     // Check available name fields and create full name
@@ -440,10 +354,6 @@ async function nfFetchUserNameById(userId) {
         `${data.firstname} ${data.lastname}` :      // Full name if available
         data.login || 'Unknown';                    // Fallback: login name or "Unknown"
 }
-
-// ===============================
-// ATTACHMENT RENDERING
-// ===============================
 
 /**
  * Renders attachments for a ticket message

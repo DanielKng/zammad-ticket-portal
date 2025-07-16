@@ -1,27 +1,40 @@
+/**
+ * @fileoverview Local-storage cache with TTL for ticket frontend
+ * @author Daniel Könning
+ * @module NFCache
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
+
 import { NF_CONFIG } from './nf-config.js';
 
-// Author: Daniel Könning
-// ===============================
-// nf-cache.js - Local-storage cache with TTL for ticket frontend
-// ===============================
-// This module provides a simple in-memory cache with time-to-live (TTL) support.
-// Used for caching API responses (tickets, details, search results) to improve performance.
-
+/**
+ * Simple in-memory cache with time-to-live (TTL) support.
+ * Used for caching API responses (tickets, details, search results) to improve performance.
+ * Supports both memory and localStorage persistence for certain key types.
+ * 
+ * @class NFCache
+ */
 class NFCache {
     /**
-     * Creates a new cache instance.
+     * Creates a new cache instance with memory and localStorage support
      * @constructor
      */
     constructor() {
-        this.memory = new Map(); // Stores cached values
-        this.timestamps = new Map(); // Stores expiry timestamps
+        /** @type {Map} In-memory cache storage */
+        this.memory = new Map();
+        /** @type {Map} Expiry timestamps for cached values */
+        this.timestamps = new Map();
+        /** @type {string} Prefix for localStorage keys */
         this.localStoragePrefix = 'nfCache_';
     }
+
     /**
-     * Stores a value in the cache with TTL.
+     * Stores a value in the cache with TTL and optional localStorage persistence
      * @param {string} key - Unique cache key
      * @param {*} value - Value to cache
-     * @param {number} ttl - Time to live in ms (required)
+     * @param {number} ttl - Time to live in milliseconds (required)
+     * @throws {Error} When TTL is not provided or invalid
      */
     set(key, value, ttl) {
         if (!ttl || ttl <= 0) {

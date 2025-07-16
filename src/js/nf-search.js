@@ -1,19 +1,15 @@
-// Author: Daniel Könning
-// ===============================
-// nf-search.js - Smart search functionality for the Zammad knowledge base
-// ===============================
-// This file implements a full search in the Zammad knowledge base
-// with autocomplete, search term highlighting, and a user-friendly
-// dropdown with search results. Uses debouncing for performance optimization.
+/**
+ * @fileoverview Smart search functionality for the Zammad knowledge base
+ * @author Daniel Könning
+ * @module NFSearch
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
 
 import { nfApiPost } from './nf-api-utils.js';
 import { nfCloneTemplate } from './nf-template-utils.js';
 import { NF_CONFIG } from './nf-config.js';
 import { nf, ZAMMAD_API_URL } from './nf-dom.js';
-
-// ===============================
-// KNOWLEDGEBASE SEARCH (API INTEGRATION)
-// ===============================
 
 /**
  * Performs a search in the Zammad knowledge base
@@ -25,9 +21,6 @@ import { nf, ZAMMAD_API_URL } from './nf-dom.js';
  */
 async function nfSearchKnowledgebase(query) {
     try {
-        // ===============================
-        // CACHE CHECK
-        // ===============================
         const cacheKey = `search_${query.toLowerCase().trim()}`;
         
         if (typeof window.nfCache !== 'undefined') {
@@ -42,9 +35,6 @@ async function nfSearchKnowledgebase(query) {
             }
         }
         
-        // ===============================
-        // API REQUEST CONFIGURATION
-        // ===============================
         const kbConfig = NF_CONFIG?.api?.knowledgeBase || {};
         const apiUrl = ZAMMAD_API_URL();
         
@@ -72,16 +62,10 @@ async function nfSearchKnowledgebase(query) {
             })
         });
         
-        // ===============================
-        // RESPONSE VALIDATION
-        // ===============================
         if (!res.ok) throw new Error('Search failed');
         
-        const result = await res.json();  // Return JSON response
+        const result = await res.json();
         
-        // ===============================
-        // CACHE RESULTS
-        // ===============================
         if (typeof window.nfCache !== 'undefined') {
             const searchTTL = NF_CONFIG.ui.cache.searchResultsTTL;
             window.nfCache.set(cacheKey, result, searchTTL);
@@ -109,32 +93,19 @@ async function nfSearchKnowledgebase(query) {
     }
 }
 
-// ===============================
-// DROPDOWN CREATION AND MANAGEMENT
-// ===============================
-
 /**
  * Prepares the dropdown element for search results
  * The dropdown element already exists in the HTML and is only cleared here
  */
 function nfCreateSearchDropdown() {
-    // ===============================
-    // PREPARE DROPDOWN
-    // ===============================
+    
     if (nf.searchDropdown) {
         nf.searchDropdown.innerHTML = '';  // Clear previous results
     } else {
-        // ===============================
-        // FALLBACK: DROPDOWN NOT FOUND
-        // ===============================
         nfLogger.warn('Search dropdown element not found in DOM');
         return;  // Exit function if dropdown element is missing
     }
 }
-
-// ===============================
-// SHOW AND FORMAT SEARCH RESULTS
-// ===============================
 
 /**
  * Shows search results in the dropdown with highlighting and click handling
@@ -144,9 +115,7 @@ function nfCreateSearchDropdown() {
  * @param {string} query - Original search term for highlighting
  */
 function nfShowSearchDropdown(resultsRaw, query) {
-    // ===============================
-    // API-RESPONSE PARSEN
-    // ===============================
+    
     let details = resultsRaw.details || [];        // Array of article details
     let highlights = {};                           // Mapping for highlighting info
     
@@ -157,43 +126,26 @@ function nfShowSearchDropdown(resultsRaw, query) {
         }
     }
     
-    // ===============================
-    // PREPARE DROPDOWN
-    // ===============================
     if (!nf.searchDropdown) nfCreateSearchDropdown();  // Create dropdown if needed
     nf.searchDropdown.innerHTML = '';                   // Clear previous results
     
-    // ===============================
-    // HANDLE NO RESULTS
-    // ===============================
     if (!details.length) {
         nf.searchDropdown.innerHTML = '<div style="padding:1rem;color:#888;">No results found.</div>';
         nf.searchDropdown.style.display = 'block';
         return;  // Exit function if results are empty
     }
     
-    // ===============================
-    // LOAD TEMPLATE SYSTEM
-    // ===============================
     // Load HTML template for search results (if present)
     const searchResultTemplate = document.getElementById('nf_search_result_template');
-    
-    // ===============================
-    // ITERATE AND DISPLAY RESULTS
-    // ===============================
     details.forEach(res => {
         let div;  // Container for search result
         let title = res.title || '';
         let summary = '';
-        // ===============================
-        // TEMPLATE-BASED CREATION
-        // ===============================
+        
         if (searchResultTemplate) {
             // Template cloning
             div = nfCloneTemplate(searchResultTemplate.firstElementChild, 'div');  // Use utility for safe cloning
-            // ===============================
-            // TITLE WITH HIGHLIGHTING
-            // ===============================
+            
             if (highlights[res.id] && highlights[res.id]["content.title"]) {
                 title = highlights[res.id]["content.title"].join(' ');
             }
@@ -203,9 +155,7 @@ function nfShowSearchDropdown(resultsRaw, query) {
                 const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&') + ')', 'gi');
                 title = title.replace(re, '<mark>$1</mark>');
             }
-            // ===============================
-            // SUMMARY WITH HIGHLIGHTING
-            // ===============================
+            
             if (highlights[res.id] && highlights[res.id]["content.body"]) {
                 summary = highlights[res.id]["content.body"].join(' ... ');
             } else {
@@ -217,9 +167,7 @@ function nfShowSearchDropdown(resultsRaw, query) {
             } else {
                 summary = summary.replace(/<em>(.*?)<\/em>/g, '<mark>$1</mark>');
             }
-            // ===============================
-            // Remove link element, use Text/Div instead
-            // ===============================
+            
             const titleElem = div.querySelector('.nf-search-result-title');
             if (titleElem) {
                 titleElem.innerHTML = title;
@@ -228,9 +176,7 @@ function nfShowSearchDropdown(resultsRaw, query) {
                 titleElem.style.cursor = 'inherit';
             }
             div.querySelector('.nf-search-result-summary').innerHTML = summary;
-            // ===============================
-            // Click-Handler on the result
-            // ===============================
+            
             const helpdeskBase = NF_CONFIG?.links?.helpdeskBase;
             div.style.cursor = 'pointer';
             div.addEventListener('click', () => {
@@ -241,21 +187,12 @@ function nfShowSearchDropdown(resultsRaw, query) {
             div.addEventListener('mouseenter', () => div.classList.add('nf-search-result--hover'));
             div.addEventListener('mouseleave', () => div.classList.remove('nf-search-result--hover'));
         } 
-        // ===============================
-        // ADD RESULT TO DROPDOWN
-        // ===============================
+        
         nf.searchDropdown.appendChild(div);
     });
     
-    // ===============================
-    // SHOW DROPDOWN
-    // ===============================
     nf.searchDropdown.style.display = 'block';
 }
-
-// ===============================
-// DROPDOWN-HIDE HELPER FUNCTION
-// ===============================
 
 /**
  * Hides the search dropdown
@@ -267,34 +204,19 @@ function nfHideSearchDropdown() {
     }
 }
 
-// ===============================
-// SEARCH-SYSTEM INIT AND EVENT-HANDLER
-// ===============================
-
 /**
  * Initializes the complete search functionality with all event listeners
  * Configures debouncing, keyboard navigation, and click-outside handling
  */
 function nfInitializeSearch() {
-    // ===============================
-    // EARLY EXIT IF SEARCH FIELD IS MISSING
-    // ===============================
+    
     if (!nf.searchInput) return;  // Exit if no search field present
     
-    // ===============================
-    // CREATE DROPDOWN
-    // ===============================
     nfCreateSearchDropdown();  // Create dropdown container
     
-    // ===============================
-    // LOAD CONFIGURATION
-    // ===============================
     // Load minimum search term length from configuration
     const minLength = NF_CONFIG?.ui?.searchMinLength || 2;
     
-    // ===============================
-    // DEBOUNCED SEARCH FUNCTION
-    // ===============================
     // Create debounced search function for performance optimization
     // Uses the configured debounce timeout from NF_CONFIG.ui.debounceTimeout
     const debouncedSearch = NFUtils.debounceConfigured(async (query) => {
@@ -308,21 +230,12 @@ function nfInitializeSearch() {
         }
     });
     
-    // ===============================
-    // INPUT EVENT LISTENER (LIVE SEARCH)
-    // ===============================
     // React to every text input in the search field
     nf.searchInput.addEventListener('input', e => handleSearchInput(e, minLength, debouncedSearch));
     
-    // ===============================
-    // KEYBOARD EVENT LISTENER
-    // ===============================
     // Handle special keys in the search field
     nf.searchInput.addEventListener('keydown', e => handleSearchKeydown(e, minLength));
     
-    // ===============================
-    // CLICK-OUTSIDE EVENT LISTENER
-    // ===============================
     // Close dropdown on click outside the search area
     document.addEventListener('click', handleClickOutside);
 }

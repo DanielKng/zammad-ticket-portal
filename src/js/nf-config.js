@@ -1,17 +1,37 @@
-// Author: Daniel Könning
-// ===============================
-// nf-config.js - Central configuration file for the Zammad ticket system
-// ===============================
-// This file contains all configuration settings for the ticket frontend.
-// API URLs, UI behavior, security policies and debug options are managed centrally here.
+/**
+ * @fileoverview Central configuration file for the Zammad ticket system
+ * @author Daniel Könning
+ * @module NFConfig
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
 
-// ===============================
-// MAIN CONFIGURATION OBJECT
-// ===============================
+/**
+ * Main configuration object containing all settings for the ticket frontend.
+ * Manages API URLs, UI behavior, security policies, debug options, and system settings.
+ * 
+ * @namespace NF_CONFIG
+ * @property {Object} api - API configuration settings
+ * @property {Object} language - Language and internationalization settings
+ * @property {Object} links - External URL references
+ * @property {Object} system - System-wide settings and assets
+ * @property {Object} ui - User interface configuration
+ * @property {Object} security - Security policies and file restrictions
+ * @property {Object} debug - Debug and logging configuration
+ * @property {Function} validateConfig - Configuration validation method
+ */
 const NF_CONFIG = {
-    // ===============================
-    // API CONFIGURATION
-    // ===============================
+    /**
+     * API configuration settings
+     * @namespace NF_CONFIG.api
+     * @property {string} baseUrl - Base URL for Zammad API endpoints
+     * @property {Object} knowledgeBase - Knowledge base configuration
+     * @property {string} knowledgeBase.id - Knowledge base identifier
+     * @property {string} knowledgeBase.locale - Locale for knowledge base content
+     * @property {string} knowledgeBase.flavor - Knowledge base flavor (public/private)
+     * @property {number} timeout - Request timeout in milliseconds
+     * @property {number} retryAttempts - Number of retry attempts for failed requests
+     */
     api: {
         baseUrl: 'https://helpdesk.yourdomain.de/api/v1',
         knowledgeBase: {
@@ -23,9 +43,15 @@ const NF_CONFIG = {
         retryAttempts: 3
     },
 
-    // ===============================
-    // LANGUAGE CONFIGURATION
-    // ===============================
+    /**
+     * Language and internationalization configuration
+     * @namespace NF_CONFIG.language
+     * @property {string} default - Default language code
+     * @property {string} current - Currently active language code
+     * @property {string} basePath - Base path for language files
+     * @property {Object} supported - Supported languages configuration
+     * @property {Object} paths - Language file path templates
+     */
     language: {
         default: 'en',
         current: 'en',
@@ -49,17 +75,23 @@ const NF_CONFIG = {
         }
     },
 
-    // ===============================
-    // EXTERNAL LINKS
-    // ===============================
+    /**
+     * External URL references
+     * @namespace NF_CONFIG.links
+     * @property {string} knowledgePortal - URL to the knowledge portal
+     * @property {string} helpdeskBase - Base URL for helpdesk system
+     */
     links: {
         knowledgePortal: 'https://helpdesk.yourdomain.de/help/de-de',
         helpdeskBase: 'https://helpdesk.yourdomain.de'
     },
 
-    // ===============================
-    // SYSTEM SETTINGS
-    // ===============================
+    /**
+     * System-wide settings and assets
+     * @namespace NF_CONFIG.system
+     * @property {string} supportEmail - Support team email address
+     * @property {Object} assets - UI assets and display settings
+     */
     system: {
         supportEmail: 'it-service@yourdomain.com',
         assets: {
@@ -70,9 +102,18 @@ const NF_CONFIG = {
         }
     },
 
-    // ===============================
-    // UI CONFIGURATION
-    // ===============================
+    /**
+     * User interface configuration
+     * @namespace NF_CONFIG.ui
+     * @property {number} statusMessageDuration - Duration for status messages in milliseconds
+     * @property {number} searchMinLength - Minimum search query length
+     * @property {number} maxSearchResults - Maximum number of search results
+     * @property {number} debounceTimeout - Debounce timeout for search in milliseconds
+     * @property {Object} login - Login-specific settings
+     * @property {number} defaultGroup - Default group ID for new tickets
+     * @property {Object} cache - Cache configuration with TTL values
+     * @property {Object} filters - Filter and sorting configuration
+     */
     ui: {
         // Timing settings
         statusMessageDuration: 4000,
@@ -117,9 +158,15 @@ const NF_CONFIG = {
         }
     },
 
-    // ===============================
-    // SECURITY SETTINGS
-    // ===============================
+    /**
+     * Security policies and file restrictions
+     * @namespace NF_CONFIG.security
+     * @property {number} maxFileSize - Maximum file size in bytes
+     * @property {Array<string>} allowedFileTypes - Array of allowed MIME types
+     * @property {Array<string>} imageExtensions - Array of supported image file extensions
+     * @property {boolean} emailAttachmentsAllowed - Whether email attachments are permitted
+     * @property {number} sessionTimeout - Session timeout in milliseconds
+     */
     security: {
         maxFileSize: 10 * 1024 * 1024,  // 10 MB
         allowedFileTypes: [
@@ -136,16 +183,25 @@ const NF_CONFIG = {
         sessionTimeout: 30 * 60 * 1000  // 30 minutes
     },
 
-    // ===============================
-    // DEBUG SETTINGS
-    // ===============================
+    /**
+     * Debug and logging configuration
+     * @namespace NF_CONFIG.debug
+     * @property {boolean} enabled - Whether debug mode is enabled
+     * @property {string} logLevel - Logging level (debug|info|warn|error)
+     */
     debug: {
         enabled: true,      // Set to false in production
         logLevel: 'debug'   // 'debug', 'info', 'warn', 'error'
     },
-    // ===============================
-    // CONFIGURATION VALIDATION
-    // ===============================
+    /**
+     * Validates the configuration object for required properties and consistency
+     * @function validateConfig
+     * @memberof NF_CONFIG
+     * @returns {Object} Validation result object
+     * @returns {boolean} returns.isValid - Whether configuration is valid
+     * @returns {Array<string>} returns.errors - Array of validation errors
+     * @returns {Array<string>} returns.warnings - Array of validation warnings
+     */
     validateConfig: function() {
         const errors = [];
         const warnings = [];
@@ -194,9 +250,6 @@ const NF_CONFIG = {
     }
 };
 
-// ===============================
-// INITIALIZATION
-// ===============================
 window.NF_CONFIG = NF_CONFIG;
 
 // Validate configuration

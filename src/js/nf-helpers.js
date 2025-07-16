@@ -1,20 +1,34 @@
+/**
+ * @fileoverview Helper functions for UI manipulation and data processing
+ * @author Daniel Könning
+ * @module NFHelpers
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
+
 import { NF_CONFIG } from './nf-config.js';
 import { nf } from './nf-dom.js';
 
-// Author: Daniel Könning
 /**
- * Helper functions for UI manipulation and data processing
+ * Shows an element by removing the hidden class
+ * @param {HTMLElement} el - Element to show
  */
-
-// UI helper functions
 function nfShow(el) {
     el?.classList.remove('nf-hidden');
 }
 
+/**
+ * Hides an element by adding the hidden class
+ * @param {HTMLElement} el - Element to hide
+ */
 function nfHide(el) {
     el?.classList.add('nf-hidden');
 }
 
+/**
+ * Controls the loading spinner visibility
+ * @param {boolean} isLoading - Whether to show or hide the loader
+ */
 function nfSetLoading(isLoading) {
     isLoading ? nfShow(nf.loader) : nfHide(nf.loader);
 }
@@ -28,10 +42,6 @@ function nfStateLabel(stateId) {
     const states = window.nfLang.getSystemData('ticketStates');
     return states[stateId] || window.nfLang.getLabel('unknownStatus');
 }
-
-// ===============================
-// HTML CLEANING HELPER FUNCTIONS
-// ===============================
 
 /**
  * Checks if a CSS style property is allowed

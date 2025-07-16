@@ -1,5 +1,10 @@
-// nf-api-utils.js - Centralized API fetch utility with retries and error handling
-// Author: Daniel Könning
+/**
+ * @fileoverview Centralized API fetch utility with retries and error handling
+ * @author Daniel Könning
+ * @module NFApiUtils
+ * @since 2025-07-15
+ * @version 1.0.0
+ */
 
 import { NF_CONFIG } from './nf-config.js';
 
@@ -34,14 +39,25 @@ export async function nfApiFetch(url, options = {}, retries, timeout) {
 }
 
 /**
- * Helper for GET requests
+ * Helper function for GET requests with standardized configuration
+ * @param {string} url - The API endpoint URL
+ * @param {Object} [options={}] - Additional fetch options
+ * @param {number} [retries] - Override retry attempts (uses config default)
+ * @param {number} [timeout] - Override timeout value (uses config default)
+ * @returns {Promise<Response>} The fetch Response object
  */
 export function nfApiGet(url, options = {}, retries, timeout) {
     return nfApiFetch(url, { ...options, method: 'GET' }, retries, timeout);
 }
 
 /**
- * Helper for POST requests (JSON)
+ * Helper function for POST requests with JSON content type
+ * @param {string} url - The API endpoint URL
+ * @param {Object} body - Request body data to be JSON-stringified
+ * @param {Object} [options={}] - Additional fetch options
+ * @param {number} [retries] - Override retry attempts (uses config default)
+ * @param {number} [timeout] - Override timeout value (uses config default)
+ * @returns {Promise<Response>} The fetch Response object
  */
 export function nfApiPost(url, body, options = {}, retries, timeout) {
     return nfApiFetch(url, {
@@ -53,7 +69,13 @@ export function nfApiPost(url, body, options = {}, retries, timeout) {
 }
 
 /**
- * Helper for PUT requests (JSON)
+ * Helper function for PUT requests with JSON content type
+ * @param {string} url - The API endpoint URL
+ * @param {Object} body - Request body data to be JSON-stringified
+ * @param {Object} [options={}] - Additional fetch options
+ * @param {number} [retries] - Override retry attempts (uses config default)
+ * @param {number} [timeout] - Override timeout value (uses config default)
+ * @returns {Promise<Response>} The fetch Response object
  */
 export function nfApiPut(url, body, options = {}, retries, timeout) {
     return nfApiFetch(url, {
